@@ -2,7 +2,7 @@
 const map = L.map('map').setView([48.8, 5.8], 8);
 
 const Esri_WorldTopoMap = L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', 
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
     { attribution: '© Esri' }
 ).addTo(map);
 
@@ -40,7 +40,6 @@ fetch("donnees_concours/departements-grand-est.geojson")
 
 // --- Chargement initial vide des communes ---
 function chargerCommunes(codeDep) {
-    // Supprimer les anciennes couches si existantes
     if (comLayer) map.removeLayer(comLayer);
 
     fetch("donnees_concours/communes-grand-est.geojson")
@@ -61,26 +60,47 @@ function chargerCommunes(codeDep) {
 async function jouerChant(codeInsee) {
     console.log("Commune cliquée :", codeInsee);
 
-    // Charger dynamiquement le CSV uniquement pour ce département
-    // Pour des performances correctes, on pourrait préparer des CSV par département
-    const response = await fetch("donnees_concours/01_oiseaux.csv");
-    const text = await response.text();
+    // Liste des fichiers par année
+    const annees = [
+        2012, 2013, 2014, 2015, 2016,
+        2017, 2018, 2019, 2020, 2021, 2022
+    ];
 
-    // Parser rapidement les lignes utiles (uniquement le codeInsee et espece)
-    const lignes = text.split("\n");
-    const oiseaux = [];
+    const toutesEspeces = new Set();
 
-    for (let i = 1; i < lignes.length; i++) {
-        const cols = lignes[i].split(",");
-        const insee = cols[cols.length - 7]; // à ajuster selon ton CSV
-        const espece = cols[4];
-        if (insee === codeInsee) oiseaux.push(espece);
+    // Boucle sur chaque fichier annuel
+    for (const annee of annees) {
+        const fichier = `donnees_concours/oiseaux_${annee}.csv`;
+        try {
+            const response = await fetch(fichier);
+            if (!response.ok) continue;
+            const text = await response.text();
+            const lignes = text.split("\n");
+
+            // Lire les colonnes utiles
+            for (let i = 1; i < lignes.length; i++) {
+                const cols = lignes[i].split(",");
+                // ⚠️ adapte cette position si ton CSV change
+                const insee = cols[cols.length - 7]; 
+                const espece = cols[4];
+                if (insee === codeInsee && espece) {
+                    toutesEspeces.add(espece.trim());
+                }
+            }
+        } catch (err) {
+            console.warn(`Fichier ${fichier} non trouvé ou illisible`);
+        }
     }
 
-    const uniques = [...new Set(oiseaux)];
-    console.log(`→ ${uniques.length} espèces trouvées dans la commune.`);
+    const uniques = Array.from(toutesEspeces);
+    console.log(`→ ${uniques.length} espèces trouvées dans la commune ${codeInsee}.`);
 
-    // Lecture des chants (limite à 7 max pour éviter la cacophonie)
+    if (uniques.length === 0) {
+        alert("Aucune espèce observée ici dans les données disponibles.");
+        return;
+    }
+
+    // Lecture des chants (limite à 7 pour éviter la cacophonie)
     const max = Math.min(uniques.length, 7);
     for (let i = 0; i < max; i++) {
         const nom = uniques[i].replace(" ", "+");
