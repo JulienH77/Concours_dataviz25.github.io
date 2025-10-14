@@ -220,3 +220,12 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
+
+
+
+badge.onclick = () => {
+    playChant(espece);
+    afficherStatsEspece(...);
+};
+
+
