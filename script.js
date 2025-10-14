@@ -11,14 +11,17 @@ const styleDep = {
     color: "black",
     weight: 3,
     opacity: 0.8,
-    fill: false
-};
+    fill: true,
+    fillColor: "white",
+    fillOpacity: 0.75};
 
 const styleCom = {
     color: "black",
     weight: 1,
-    opacity: 0.001,
-    fill: true
+    opacity: 0.5,
+    fill: true,
+    fillColor: "white",
+    fillOpacity: 0.001
 };
 
 // --- COUCHES ---
@@ -112,5 +115,6 @@ async function jouerChant(codeInsee) {
         }
     }
 }
+
 
 
