@@ -1,11 +1,3 @@
-// --- INITIALISATION DE LA CARTE ---
-const map = L.map('map').setView([48.8, 5.8], 8);
-
-const Esri_WorldTopoMap = L.tileLayer(
-    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-    { attribution: '© Esri' }
-).addTo(map);
-
 // --- STYLES ---
 const styleDep = {
     color: "black",
@@ -13,7 +5,8 @@ const styleDep = {
     opacity: 0.8,
     fill: true,
     fillColor: "white",
-    fillOpacity: 0.75};
+    fillOpacity: 0.75
+};
 
 const styleCom = {
     color: "black",
@@ -24,97 +17,78 @@ const styleCom = {
     fillOpacity: 0.001
 };
 
-// --- COUCHES ---
-let depLayer, comLayer;
+// --- INIT CARTE ---
+const map = L.map('map').setView([48.8021, 5.8844], 8);
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '© Esri'
+}).addTo(map);
 
-// --- Chargement des départements ---
-fetch("donnees_concours/departements-grand-est.geojson")
-    .then(res => {
-        if (!res.ok) throw new Error("Impossible de charger les départements.");
-        return res.json();
-    })
-    .then(geojson => {
-        depLayer = L.geoJSON(geojson, {
-            style: styleDep,
-            onEachFeature: (feature, layer) => {
-                layer.bindTooltip(feature.properties.nom, { sticky: true });
-                layer.on('click', () => chargerCommunes(feature.properties.code_insee));
-            }
-        }).addTo(map);
-    })
-    .catch(err => console.error("Erreur de chargement départements :", err));
+let layerCommunes = null;
+let oiseauxData = [];
 
-// --- Chargement des communes ---
-function chargerCommunes(codeDep) {
-    if (comLayer) map.removeLayer(comLayer);
+// --- CHARGEMENT OISEAUX (2015 UNIQUEMENT POUR L'INSTANT) ---
+fetch('donnees_concours/oiseaux_2015.csv')
+    .then(r => r.text())
+    .then(txt => {
+        const lignes = txt.split('\n').slice(1); // enlève l'entête
+        oiseauxData = lignes.map(l => {
+            const cols = l.split(',');
+            return {
+                espece: cols[4]?.trim(),
+                codeinseecommune: cols[10]?.trim()
+            };
+        });
+        console.log("Oiseaux chargés :", oiseauxData.length);
+    });
+
+// --- FONCTION : communes par département ---
+function chargerCommunesParDep(codeDep) {
+    if (layerCommunes) map.removeLayer(layerCommunes);
 
     fetch("donnees_concours/communes-grand-est.geojson")
-        .then(res => {
-            if (!res.ok) throw new Error("Impossible de charger les communes.");
-            return res.json();
-        })
-        .then(geojson => {
-            comLayer = L.geoJSON(geojson, {
+        .then(r => r.json())
+        .then(data => {
+            const communesFiltrees = {
+                type: "FeatureCollection",
+                features: data.features.filter(f => f.properties.code.startsWith(codeDep))
+            };
+
+            layerCommunes = L.geoJSON(communesFiltrees, {
                 style: styleCom,
-                filter: feat => feat.properties.code_dep === codeDep,
-                onEachFeature: (feat, layer) => {
-                    layer.bindTooltip(feat.properties.nom);
-                    layer.on('click', () => jouerChant(feat.properties.code_insee));
+                onEachFeature: (feature, layer) => {
+                    layer.on('click', () => afficherOiseaux(feature.properties.code, feature.properties.nom));
                 }
             }).addTo(map);
         })
-        .catch(err => console.error("Erreur de chargement communes :", err));
+        .catch(err => console.error("Erreur chargement communes :", err));
 }
 
-// --- Fonction de lecture de chants (inchangée) ---
-async function jouerChant(codeInsee) {
-    console.log("Commune cliquée :", codeInsee);
+// --- FONCTION : oiseaux par commune ---
+function afficherOiseaux(codeCommune, nomCommune) {
+    const oiseauxCommune = oiseauxData.filter(o => o.codeinseecommune === codeCommune);
 
-    const annees = [2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022];
-    const toutesEspeces = new Set();
+    if (oiseauxCommune.length === 0) {
+        alert(`Aucun oiseau observé en 2015 sur ${nomCommune}`);
+    } else {
+        const espece = oiseauxCommune[0].espece;
+        alert(`Exemple : ${espece} trouvé à ${nomCommune}`);
+        // Ici on pourrait appeler une API de chant :
+        // playChant(espece);
+    }
+}
 
-    for (const annee of annees) {
-        const fichier = `donnees_concours/oiseaux_${annee}.csv`;
-        try {
-            const response = await fetch(fichier);
-            if (!response.ok) continue;
-            const text = await response.text();
-            const lignes = text.split("\n");
-
-            for (let i = 1; i < lignes.length; i++) {
-                const cols = lignes[i].split(",");
-                const insee = cols[cols.length - 7];
-                const espece = cols[4];
-                if (insee === codeInsee && espece) {
-                    toutesEspeces.add(espece.trim());
-                }
+// --- CHARGEMENT DES DEPARTEMENTS ---
+fetch("donnees_concours/departements-grand-est.geojson")
+    .then(r => r.json())
+    .then(data => {
+        L.geoJSON(data, {
+            style: styleDep,
+            onEachFeature: (feature, layer) => {
+                layer.on('click', () => {
+                    const codeDep = feature.properties.code.toString().padStart(2, '0');
+                    chargerCommunesParDep(codeDep);
+                });
             }
-        } catch (err) {
-            console.warn(`⚠️ Fichier ${fichier} illisible`, err);
-        }
-    }
-
-    const uniques = Array.from(toutesEspeces);
-    console.log(`→ ${uniques.length} espèces trouvées dans la commune ${codeInsee}.`);
-
-    if (uniques.length === 0) {
-        alert("Aucune espèce observée ici dans les données disponibles.");
-        return;
-    }
-
-    const max = Math.min(uniques.length, 7);
-    for (let i = 0; i < max; i++) {
-        const nom = uniques[i].replace(" ", "+");
-        const url = `https://xeno-canto.org/api/2/recordings?query=${nom}`;
-        const data = await fetch(url).then(r => r.json());
-        if (data.recordings && data.recordings.length > 0) {
-            const mp3 = data.recordings[0].file;
-            const audio = new Audio(mp3);
-            audio.volume = 0.4;
-            audio.play();
-        }
-    }
-}
-
-
-
+        }).addTo(map);
+    })
+    .catch(err => console.error("Erreur chargement départements :", err));
