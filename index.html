@@ -1,27 +1,24 @@
 <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/47/47244.png">
-        <title>Le Grand-Est chanté</title>
-    
-        <!-- Leaflet CSS -->
-        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-        <link rel="stylesheet" href="styles.css">
-    
-        <!-- Leaflet JS -->
-        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    </head>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/47/47244.png">
+    <title>Le Grand-Est chanté</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css">
+</head>
 <body>
-    <h1>Le Grand-Est chanté</h1>
+    <div id="header">
+        <h1>Le Grand-Est chanté</h1>
+        <div id="loader" class="hidden">Chargement des données...</div>
+    </div>
     <div id="map"></div>
     <div id="especes-container"></div>
-    <!-- Conteneur pour la popup -->
     <div id="popup-stats" class="popup-hidden"></div>
+    <!-- Leaflet JS (à la fin pour optimiser le chargement) -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
-
 </html>
-
-
