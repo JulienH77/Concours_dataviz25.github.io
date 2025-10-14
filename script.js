@@ -17,7 +17,7 @@ const styleDep = {
 const styleCom = {
     color: "black",
     weight: 1,
-    opacity: 0.5,
+    opacity: 0.001,
     fill: true
 };
 
@@ -112,4 +112,5 @@ async function jouerChant(codeInsee) {
         }
     }
 }
+
 
