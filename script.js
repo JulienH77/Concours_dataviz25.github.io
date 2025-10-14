@@ -60,19 +60,21 @@ function chargerOiseauxParDep(codeDep) {
     fetch('donnees_concours/oiseaux_2015.csv')
         .then(r => r.text())
         .then(txt => {
+            // split robuste pour Windows ou Linux
+            const lignes = txt.split(/\r?\n/).slice(1);
+
+            // détection séparateur
             const sep = txt.includes(';') ? ';' : ',';
-            const lignes = txt.split('\n').slice(1);
 
             const oiseauxTous = lignes.map(l => {
                 const cols = l.split(sep);
                 if (cols.length < 13) return null;
                 return {
                     espece: cols[4]?.trim(),
-                    codeinseecommune: cols[12]?.trim().padStart(5, '0')
+                    codeinseecommune: cols[12]?.trim().padStart(5,'0')
                 };
             }).filter(Boolean);
 
-            // Filtrage exact par code département
             const codeDepNorm = codeDep.toString().padStart(2,'0');
             oiseauxData = oiseauxTous.filter(o => o.codeinseecommune.startsWith(codeDepNorm));
 
@@ -81,6 +83,7 @@ function chargerOiseauxParDep(codeDep) {
         })
         .catch(err => console.error("Erreur chargement oiseaux :", err));
 }
+
 
 // --- CHARGEMENT COMMUNES D'UN DEPARTEMENT ---
 function chargerCommunesParDep(codeDep) {
@@ -143,4 +146,5 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements :", err));
+
 
