@@ -26,24 +26,36 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map
 let layerCommunes = null;
 let oiseauxData = [];
 
-// --- CHARGEMENT OISEAUX (2015 UNIQUEMENT POUR L'INSTANT) ---
-fetch('donnees_concours/oiseaux_2015.csv')
-    .then(r => r.text())
-    .then(txt => {
-        const lignes = txt.split('\n').slice(1); // enlève l'entête
-        oiseauxData = lignes.map(l => {
-            const cols = l.split(',');
-            if (cols.length < 11) return null; // sécurité
-            return {
-                espece: cols[4]?.trim(),
-                codeinseecommune: cols[10]?.trim().padStart(5, '0') // normalisation
-            };
-        }).filter(Boolean); // supprime les lignes vides
-        console.log("Oiseaux chargés :", oiseauxData.length);
-    })
-    .catch(err => console.error("Erreur chargement CSV :", err));
+// --- CHARGEMENT OISEAUX PAR DEPARTEMENT ---
+function chargerOiseauxParDep(codeDep) {
+    console.log(`→ Chargement des oiseaux 2015 pour le département ${codeDep}...`);
 
-// --- FONCTION : communes par département ---
+    fetch('donnees_concours/oiseaux_2015.csv')
+        .then(r => r.text())
+        .then(txt => {
+            const sep = txt.includes(';') ? ';' : ',';
+            const lignes = txt.split('\n').slice(1); // enleve l'entête
+
+            const oiseauxTous = lignes.map(l => {
+                const cols = l.split(sep);
+                if (cols.length < 13) return null;
+                const code = cols[12]?.trim().padStart(5, '0'); // colonne codeInseeCommune
+                return {
+                    espece: cols[4]?.trim(),
+                    codeinseecommune: code
+                };
+            }).filter(Boolean);
+
+            // On ne garde que les oiseaux dont le code commune commence par le code département
+            oiseauxData = oiseauxTous.filter(o => o.codeinseecommune.startsWith(codeDep));
+
+            console.log(`Oiseaux chargés pour le ${codeDep} : ${oiseauxData.length} observations`);
+            console.log("Exemple :", oiseauxData.slice(0, 5));
+        })
+        .catch(err => console.error("Erreur chargement oiseaux :", err));
+}
+
+// --- CHARGEMENT COMMUNES D'UN DEPARTEMENT ---
 function chargerCommunesParDep(codeDep) {
     if (layerCommunes) map.removeLayer(layerCommunes);
 
@@ -71,9 +83,9 @@ function chargerCommunesParDep(codeDep) {
         .catch(err => console.error("Erreur chargement communes :", err));
 }
 
-// --- FONCTION : oiseaux par commune ---
+// --- FONCTION : AFFICHAGE OISEAUX PAR COMMUNE ---
 function afficherOiseaux(codeCommune, nomCommune) {
-    const codeNorm = codeCommune.toString().padStart(5, '0'); // standardisation
+    const codeNorm = codeCommune.toString().padStart(5, '0');
     const oiseauxCommune = oiseauxData.filter(o => o.codeinseecommune === codeNorm);
 
     console.log(`Recherche oiseaux pour ${nomCommune} (${codeNorm}) → ${oiseauxCommune.length} résultats`);
@@ -83,7 +95,7 @@ function afficherOiseaux(codeCommune, nomCommune) {
     } else {
         const especes = [...new Set(oiseauxCommune.map(o => o.espece))];
         alert(`${especes.length} espèces trouvées à ${nomCommune} :\n${especes.slice(0, 7).join(', ')}${especes.length > 7 ? '…' : ''}`);
-        // Plus tard → playChant(especes);
+        // playChant(especes);
     }
 }
 
@@ -97,7 +109,8 @@ fetch("donnees_concours/departements-grand-est.geojson")
                 layer.on('click', () => {
                     const codeDep = feature.properties.code.toString().padStart(2, '0');
                     console.log("Département cliqué :", codeDep);
-                    chargerCommunesParDep(codeDep);
+                    chargerOiseauxParDep(codeDep); // charge d'abord les oiseaux
+                    chargerCommunesParDep(codeDep); // puis les communes
                 });
             }
         }).addTo(map);
