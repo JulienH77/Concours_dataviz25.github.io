@@ -1,24 +1,26 @@
-// --- STYLES LEAFLET ---
+// --- STYLES LEAFLET (COULEURS D'ORIGINE) ---
 const styleDep = {
-    color: "#3498db",
-    weight: 2,
-    opacity: 0.8,
-    fillOpacity: 0.5,
-    fillColor: "#3498db"
+    color: "black",       // Bordure noire
+    weight: 3,           // Épaisseur 3
+    opacity: 0.8,        // Opacité bordure
+    fill: true,          // Remplissage activé
+    fillColor: "white",  // Blanc
+    fillOpacity: 0.75   // Opacité remplissage
 };
 
 const styleCom = {
-    color: "#2ecc71",
-    weight: 1,
-    opacity: 0.7,
-    fillOpacity: 0.3,
-    fillColor: "#2ecc71"
+    color: "black",       // Bordure noire
+    weight: 1,           // Épaisseur 1
+    opacity: 0.5,        // Opacité bordure
+    fill: true,          // Remplissage activé
+    fillColor: "white",  // Blanc
+    fillOpacity: 0.001   // Quasi transparent
 };
 
 // --- INIT CARTE ---
 const map = L.map('map').setView([48.8021, 5.8844], 8);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '© Esri'
 }).addTo(map);
 
 let layerCommunes = null;
@@ -31,7 +33,7 @@ function setLoading(isLoading) {
     loader.classList.toggle('hidden', !isLoading);
 }
 
-// --- CHARGEMENT OPTIMISÉ DES CSV (parallèle) ---
+// --- CHARGEMENT OPTIMISÉ DES CSV ---
 async function chargerTousLesOiseaux(codeDep) {
     setLoading(true);
     oiseauxData = [];
@@ -105,7 +107,7 @@ async function chargerCommunesParDep(codeDep) {
     }
 }
 
-// --- AFFICHAGE DES ESPÈCES SOUS LA CARTE ---
+// --- AFFICHAGE DES ESPÈCES (exposants visibles) ---
 function afficherOiseaux(codeCommune, nomCommune) {
     const codeNorm = codeCommune.toString().padStart(5, '0');
     const oiseauxCommune = oiseauxData.filter(o => o.codeinseecommune === codeNorm);
@@ -115,7 +117,7 @@ function afficherOiseaux(codeCommune, nomCommune) {
     container.innerHTML = '';
 
     if (oiseauxCommune.length === 0) {
-        container.innerHTML = `<p style="text-align: center; width: 100%;">Aucun oiseau observé sur ${nomCommune}</p>`;
+        container.innerHTML = `<p style="text-align: center; width: 100%; color: #5e8c61;">Aucun oiseau observé sur ${nomCommune}</p>`;
         return;
     }
 
@@ -126,7 +128,7 @@ function afficherOiseaux(codeCommune, nomCommune) {
         especesCount[espece] = (especesCount[espece] || 0) + 1;
     });
 
-    // Trie les espèces par nombre d'observations (décroissant)
+    // Trie les espèces par nombre d'observations
     const especesTriees = Object.entries(especesCount).sort((a, b) => b[1] - a[1]);
 
     // Affiche un badge par espèce
@@ -134,12 +136,10 @@ function afficherOiseaux(codeCommune, nomCommune) {
         const badge = document.createElement('div');
         badge.className = 'espece-badge';
 
-        // Image placeholder (à remplacer par tes photos)
         const img = document.createElement('img');
         img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
         img.alt = espece;
 
-        // Nombre d'observations en exposant
         const countSpan = document.createElement('span');
         countSpan.className = 'espece-count';
         countSpan.textContent = count;
@@ -148,17 +148,15 @@ function afficherOiseaux(codeCommune, nomCommune) {
         badge.appendChild(countSpan);
         container.appendChild(badge);
 
-        // Événement pour afficher la popup
         badge.onclick = () => afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune);
     });
 }
 
-// --- AFFICHAGE DES STATISTIQUES DANS UNE POPUP ---
+// --- AFFICHAGE DES STATISTIQUES (inchangé) ---
 function afficherStatsEspece(espece, observations, nomCommune) {
     const popup = document.getElementById('popup-stats');
     popup.innerHTML = '';
 
-    // Récupère les infos de la première observation
     const stats = {
         nomScientifique: observations[0].nomScientifique,
         nomVernaculaire: observations[0].nomVernaculaire,
@@ -170,17 +168,15 @@ function afficherStatsEspece(espece, observations, nomCommune) {
         observationsParAnnee: {}
     };
 
-    // Compte le nombre d'observations par année
     observations.forEach(o => {
         const annee = o.annee;
         stats.observationsParAnnee[annee] = (stats.observationsParAnnee[annee] || 0) + 1;
     });
 
-    // Crée le contenu de la popup
     let content = `
         <div class="popup-close" onclick="document.getElementById('popup-stats').classList.add('popup-hidden')">×</div>
-        <h2 style="margin-top: 0; color: #2c3e50;">${espece}</h2>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <h2 style="margin-top: 0; color: #5e8c61; font-family: 'Patrick Hand', cursive;">${espece}</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-family: 'Cormorant Garamond', serif;">
             <div>
                 <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
                 <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
@@ -194,10 +190,9 @@ function afficherStatsEspece(espece, observations, nomCommune) {
         </div>
         <p><strong>Espèce réglementée:</strong> ${stats.especeReglementee}</p>
         <p><strong>Observations à ${nomCommune}:</strong></p>
-        <ul style="columns: 2; list-style-type: none; padding: 0;">
+        <ul style="columns: 2; list-style-type: none; padding: 0; font-family: 'Cormorant Garamond', serif;">
     `;
 
-    // Ajoute les observations par année (triées)
     const anneesTriees = Object.keys(stats.observationsParAnnee).sort();
     anneesTriees.forEach(annee => {
         content += `<li style="padding: 5px 0;">• ${annee}: ${stats.observationsParAnnee[annee]} observation(s)</li>`;
