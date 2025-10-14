@@ -6,28 +6,30 @@ const Esri_WorldTopoMap = L.tileLayer(
     { attribution: '© Esri' }
 ).addTo(map);
 
-// --- COUCHES GEOJSON ---
-let depLayer, comLayer;
-
-// Style départements (plus épais)
+// --- STYLES ---
 const styleDep = {
-    color: "white",
+    color: "black",
     weight: 3,
     opacity: 0.8,
     fill: false
 };
 
-// Style communes (plus fin)
 const styleCom = {
-    color: "white",
+    color: "black",
     weight: 1,
-    opacity: 0.4,
+    opacity: 0.5,
     fill: false
 };
 
+// --- COUCHES ---
+let depLayer, comLayer;
+
 // --- Chargement des départements ---
 fetch("donnees_concours/departements-grand-est.geojson")
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) throw new Error("Impossible de charger les départements.");
+        return res.json();
+    })
     .then(geojson => {
         depLayer = L.geoJSON(geojson, {
             style: styleDep,
@@ -36,14 +38,18 @@ fetch("donnees_concours/departements-grand-est.geojson")
                 layer.on('click', () => chargerCommunes(feature.properties.code_insee));
             }
         }).addTo(map);
-    });
+    })
+    .catch(err => console.error("Erreur de chargement départements :", err));
 
-// --- Chargement initial vide des communes ---
+// --- Chargement des communes ---
 function chargerCommunes(codeDep) {
     if (comLayer) map.removeLayer(comLayer);
 
     fetch("donnees_concours/communes-grand-est.geojson")
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error("Impossible de charger les communes.");
+            return res.json();
+        })
         .then(geojson => {
             comLayer = L.geoJSON(geojson, {
                 style: styleCom,
@@ -53,22 +59,17 @@ function chargerCommunes(codeDep) {
                     layer.on('click', () => jouerChant(feat.properties.code_insee));
                 }
             }).addTo(map);
-        });
+        })
+        .catch(err => console.error("Erreur de chargement communes :", err));
 }
 
-// --- Fonction de lecture de chants ---
+// --- Fonction de lecture de chants (inchangée) ---
 async function jouerChant(codeInsee) {
     console.log("Commune cliquée :", codeInsee);
 
-    // Liste des fichiers par année
-    const annees = [
-        2012, 2013, 2014, 2015, 2016,
-        2017, 2018, 2019, 2020, 2021, 2022
-    ];
-
+    const annees = [2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022];
     const toutesEspeces = new Set();
 
-    // Boucle sur chaque fichier annuel
     for (const annee of annees) {
         const fichier = `donnees_concours/oiseaux_${annee}.csv`;
         try {
@@ -77,18 +78,16 @@ async function jouerChant(codeInsee) {
             const text = await response.text();
             const lignes = text.split("\n");
 
-            // Lire les colonnes utiles
             for (let i = 1; i < lignes.length; i++) {
                 const cols = lignes[i].split(",");
-                // ⚠️ adapte cette position si ton CSV change
-                const insee = cols[cols.length - 7]; 
+                const insee = cols[cols.length - 7];
                 const espece = cols[4];
                 if (insee === codeInsee && espece) {
                     toutesEspeces.add(espece.trim());
                 }
             }
         } catch (err) {
-            console.warn(`Fichier ${fichier} non trouvé ou illisible`);
+            console.warn(`⚠️ Fichier ${fichier} illisible`, err);
         }
     }
 
@@ -100,7 +99,6 @@ async function jouerChant(codeInsee) {
         return;
     }
 
-    // Lecture des chants (limite à 7 pour éviter la cacophonie)
     const max = Math.min(uniques.length, 7);
     for (let i = 0; i < max; i++) {
         const nom = uniques[i].replace(" ", "+");
