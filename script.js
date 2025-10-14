@@ -94,7 +94,7 @@ async function chargerCommunesParDep(codeDep) {
 }
 
 // --- FONCTION : AFFICHAGE OISEAUX PAR COMMUNE ET LECTURE DES CHANTS ---
-function afficherOiseaux(codeCommune, nomCommune) {
+/*function afficherOiseaux(codeCommune, nomCommune) {
     const codeNorm = codeCommune.toString().padStart(5, '0');
     const oiseauxCommune = oiseauxData.filter(o => o.codeinseecommune === codeNorm);
     console.log(`Recherche oiseaux pour ${nomCommune} (${codeNorm}) → ${oiseauxCommune.length} résultats`);
@@ -106,7 +106,39 @@ function afficherOiseaux(codeCommune, nomCommune) {
         const especes = [...new Set(oiseauxCommune.map(o => o.espece))];
         alert(`${especes.length} espèces trouvées à ${nomCommune} :\n${especes.slice(0, 7).join(', ')}${especes.length > 7 ? '…' : ''}`);
     }
+}*/
+function afficherOiseaux(codeCommune, nomCommune) {
+    const codeNorm = codeCommune.toString().padStart(5, '0');
+    const oiseauxCommune = oiseauxData.filter(o => o.codeinseecommune === codeNorm);
+    console.log(`Recherche oiseaux pour ${nomCommune} (${codeNorm}) → ${oiseauxCommune.length} résultats`);
+
+    const container = document.getElementById('especes-container');
+    container.innerHTML = ''; // Vide le conteneur
+
+    if (oiseauxCommune.length === 0) {
+        container.innerHTML = `<p>Aucun oiseau observé en 2015 sur ${nomCommune}</p>`;
+    } else {
+        const especes = [...new Set(oiseauxCommune.map(o => o.espece))];
+        especes.forEach(espece => {
+            // Crée un badge pour chaque espèce
+            const badge = document.createElement('div');
+            badge.className = 'espece-badge';
+            badge.title = espece; // Texte au survol
+
+            // Ajoute une image par défaut (à remplacer plus tard par tes photos)
+            const img = document.createElement('img');
+            img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
+            img.alt = espece;
+
+            badge.appendChild(img);
+            container.appendChild(badge);
+
+            // Ajoute un événement pour jouer le chant (à implémenter plus tard)
+            badge.onclick = () => playChant(espece);
+        });
+    }
 }
+
 
 // --- CHARGEMENT DES DEPARTEMENTS ---
 fetch("donnees_concours/departements-grand-est.geojson")
@@ -125,5 +157,6 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements :", err));
+
 
 
