@@ -37,15 +37,18 @@ async function chargerOiseauxParDep(codeDep) {
         oiseauxData = lignes.map(l => {
             const cols = l.split(sep);
             if (cols.length < 13) return null;
-            const code = cols[12]?.trim().padStart(5, '0'); // colonne codeInseeCommune
+            let code = cols[12]?.trim();
+            // Normalisation : on s'assure que le code a 5 chiffres, en ajoutant des zéros au début si nécessaire
+            code = code.padStart(5, '0');
             return {
                 espece: cols[4]?.trim(),
                 codeinseecommune: code
             };
         }).filter(Boolean);
-        // Filtre pour ne garder que les oiseaux du département
-        oiseauxData = oiseauxData.filter(o => o.codeinseecommune.startsWith(codeDep));
+        // Filtre pour ne garder que les oiseaux du département (en comparant les 2 premiers chiffres)
+        oiseauxData = oiseauxData.filter(o => o.codeinseecommune.startsWith(codeDep.padStart(2, '0')));
         console.log(`Oiseaux chargés pour le ${codeDep} : ${oiseauxData.length} observations`);
+        console.log("Exemple de codes INSEE trouvés :", [...new Set(oiseauxData.map(o => o.codeinseecommune).slice(0, 5))]);
     } catch (err) {
         console.error("Erreur chargement oiseaux :", err);
     }
@@ -62,7 +65,7 @@ async function chargerCommunesParDep(codeDep) {
         const communesFiltrees = {
             type: "FeatureCollection",
             features: data.features.filter(f =>
-                f.properties.code && f.properties.code.startsWith(codeDep)
+                f.properties.code && f.properties.code.startsWith(codeDep.padStart(2, '0'))
             )
         };
         console.log(`Communes trouvées dans le département ${codeDep} :`, communesFiltrees.features.length);
@@ -84,28 +87,14 @@ function afficherOiseaux(codeCommune, nomCommune) {
     const codeNorm = codeCommune.toString().padStart(5, '0');
     const oiseauxCommune = oiseauxData.filter(o => o.codeinseecommune === codeNorm);
     console.log(`Recherche oiseaux pour ${nomCommune} (${codeNorm}) → ${oiseauxCommune.length} résultats`);
+    console.log("Codes INSEE des oiseaux chargés :", [...new Set(oiseauxData.map(o => o.codeinseecommune))]);
 
     if (oiseauxCommune.length === 0) {
         alert(`Aucun oiseau observé en 2015 sur ${nomCommune}`);
     } else {
         const especes = [...new Set(oiseauxCommune.map(o => o.espece))];
         alert(`${especes.length} espèces trouvées à ${nomCommune} :\n${especes.slice(0, 7).join(', ')}${especes.length > 7 ? '…' : ''}`);
-
-        // Ajoute un bouton pour chaque espèce pour jouer son chant
-        especes.forEach(espece => {
-            const btn = document.createElement('button');
-            btn.textContent = `Écouter ${espece}`;
-            btn.onclick = () => playChant(espece);
-            document.body.appendChild(btn);
-        });
     }
-}
-
-// --- FONCTION : JOUER LE CHANT D'UNE ESPECE ---
-function playChant(espece) {
-    const audioPath = `chants/${espece}.mp3`; // Assure-toi que ce chemin est correct
-    const audio = new Audio(audioPath);
-    audio.play().catch(err => console.error("Erreur lecture audio :", err));
 }
 
 // --- CHARGEMENT DES DEPARTEMENTS ---
@@ -116,7 +105,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
             style: styleDep,
             onEachFeature: (feature, layer) => {
                 layer.on('click', async () => {
-                    const codeDep = feature.properties.code.toString().padStart(2, '0');
+                    const codeDep = feature.properties.code;
                     console.log("Département cliqué :", codeDep);
                     await chargerOiseauxParDep(codeDep); // Attend la fin du chargement des oiseaux
                     chargerCommunesParDep(codeDep); // Puis charge les communes
