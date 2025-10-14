@@ -27,7 +27,7 @@ let layerCommunes = null;
 let oiseauxData = [];
 
 // --- CHARGEMENT OISEAUX PAR DEPARTEMENT ---
-function chargerOiseauxParDep(codeDep) {
+/*function chargerOiseauxParDep(codeDep) {
     console.log(`→ Chargement des oiseaux 2015 pour le département ${codeDep}...`);
 
     fetch('donnees_concours/oiseaux_2015.csv')
@@ -51,6 +51,33 @@ function chargerOiseauxParDep(codeDep) {
 
             console.log(`Oiseaux chargés pour le ${codeDep} : ${oiseauxData.length} observations`);
             console.log("Exemple :", oiseauxData.slice(0, 5));
+        })
+        .catch(err => console.error("Erreur chargement oiseaux :", err));
+}*/
+function chargerOiseauxParDep(codeDep) {
+    console.log(`→ Chargement des oiseaux 2015 pour le département ${codeDep}...`);
+
+    fetch('donnees_concours/oiseaux_2015.csv')
+        .then(r => r.text())
+        .then(txt => {
+            const sep = txt.includes(';') ? ';' : ',';
+            const lignes = txt.split('\n').slice(1);
+
+            const oiseauxTous = lignes.map(l => {
+                const cols = l.split(sep);
+                if (cols.length < 13) return null;
+                return {
+                    espece: cols[4]?.trim(),
+                    codeinseecommune: cols[12]?.trim().padStart(5, '0')
+                };
+            }).filter(Boolean);
+
+            // Filtrage exact par code département
+            const codeDepNorm = codeDep.toString().padStart(2,'0');
+            oiseauxData = oiseauxTous.filter(o => o.codeinseecommune.startsWith(codeDepNorm));
+
+            console.log(`Oiseaux chargés pour le département ${codeDepNorm} : ${oiseauxData.length} observations`);
+            console.log("Premier oiseau :", oiseauxData[0]);
         })
         .catch(err => console.error("Erreur chargement oiseaux :", err));
 }
@@ -116,3 +143,4 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements :", err));
+
