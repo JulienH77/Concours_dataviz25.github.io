@@ -32,38 +32,37 @@ async function chargerOiseauxParDep(codeDep) {
     try {
         const response = await fetch('donnees_concours/oiseaux_2015.csv');
         const txt = await response.text();
-        console.log("Contenu brut du CSV (5 premières lignes) :");
-        console.log(txt.split('\n').slice(0, 5).join('\n'));
-
-        const sep = txt.includes(';') ? ';' : ',';
         const lignes = txt.split('\n').slice(1); // Enlève l'entête
         const oiseauxTous = [];
         lignes.forEach((l, i) => {
-            const cols = l.split(sep);
-            if (cols.length < 13) {
+            const cols = l.split(';');
+            if (cols.length < 10) {
                 console.warn(`Ligne ${i+1} ignorée (pas assez de colonnes) :`, l);
                 return;
             }
-            let code = cols[12]?.trim();
+            let code = cols[9]?.trim(); // codeinseecommune est à l'index 9
             if (!code) {
                 console.warn(`Ligne ${i+1} ignorée (code INSEE vide) :`, l);
                 return;
             }
-            // Normalisation : on s'assure que le code a 5 chiffres
+            // Normalisation : on s'assure que le code a 5 chiffres (ex: 8100 → 08100)
             code = code.padStart(5, '0');
             oiseauxTous.push({
-                espece: cols[4]?.trim(),
+                espece: cols[3]?.trim(), // "espece" est à l'index 3
                 codeinseecommune: code
             });
         });
 
-        oiseauxData = oiseauxTous.filter(o => o.codeinseecommune.startsWith(codeDep.padStart(2, '0')));
+        // Filtre pour ne garder que les oiseaux du département
+        const codeDepNormalise = codeDep.padStart(2, '0');
+        oiseauxData = oiseauxTous.filter(o => o.codeinseecommune.startsWith(codeDepNormalise));
         console.log(`Oiseaux chargés pour le ${codeDep} : ${oiseauxData.length} observations`);
         console.log("Exemple de codes INSEE trouvés :", [...new Set(oiseauxData.map(o => o.codeinseecommune).slice(0, 5))]);
     } catch (err) {
         console.error("Erreur chargement oiseaux :", err);
     }
 }
+
 
 
 // --- CHARGEMENT COMMUNES D'UN DEPARTEMENT (ASYNCHRONE) ---
@@ -126,4 +125,5 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements :", err));
+
 
