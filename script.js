@@ -1,20 +1,20 @@
 // --- STYLES LEAFLET (COULEURS D'ORIGINE) ---
 const styleDep = {
-    color: "black",       // Bordure noire
-    weight: 3,           // Épaisseur 3
-    opacity: 0.8,        // Opacité bordure
-    fill: true,          // Remplissage activé
-    fillColor: "white",  // Blanc
-    fillOpacity: 0.75   // Opacité remplissage
+    color: "black",
+    weight: 3,
+    opacity: 0.8,
+    fill: true,
+    fillColor: "white",
+    fillOpacity: 0.75
 };
 
 const styleCom = {
-    color: "black",       // Bordure noire
-    weight: 1,           // Épaisseur 1
-    opacity: 0.5,        // Opacité bordure
-    fill: true,          // Remplissage activé
-    fillColor: "white",  // Blanc
-    fillOpacity: 0.001   // Quasi transparent
+    color: "black",
+    weight: 1,
+    opacity: 0.5,
+    fill: true,
+    fillColor: "white",
+    fillOpacity: 0.001
 };
 
 // --- INIT CARTE ---
@@ -26,16 +26,21 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map
 let layerCommunes = null;
 let oiseauxData = [];
 const annees = [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022];
-const loader = document.getElementById('loader');
+const deptFiles = {
+    "08": "communes_08.geojson",
+    "10": "communes_10.geojson",
+    "51": "communes_51.geojson",
+    "52": "communes_52.geojson",
+    "54": "communes_54.geojson",
+    "55": "communes_55.geojson",
+    "57": "communes_57.geojson",
+    "67": "communes_67.geojson",
+    "68": "communes_68.geojson",
+    "88": "communes_88.geojson"
+};
 
-// --- AFFICHER/MASQUER LE LOADER ---
-function setLoading(isLoading) {
-    loader.classList.toggle('hidden', !isLoading);
-}
-
-// --- CHARGEMENT OPTIMISÉ DES CSV ---
+// --- CHARGEMENT DES OISEAUX (TOUTES ANNÉES) ---
 async function chargerTousLesOiseaux(codeDep) {
-    setLoading(true);
     oiseauxData = [];
     const promises = annees.map(annee =>
         fetch(`donnees_concours/oiseaux_${annee}.csv`)
@@ -75,23 +80,23 @@ async function chargerTousLesOiseaux(codeDep) {
     const results = await Promise.all(promises);
     oiseauxData = results.flat();
     console.log(`Données chargées pour le département ${codeDep}: ${oiseauxData.length} observations`);
-    setLoading(false);
 }
 
-// --- CHARGEMENT DES COMMUNES (avec popup Leaflet) ---
+// --- CHARGEMENT DES COMMUNES (PAR DÉPARTEMENT) ---
 async function chargerCommunesParDep(codeDep) {
     if (layerCommunes) map.removeLayer(layerCommunes);
-    try {
-        const response = await fetch("donnees_concours/communes-grand-est.geojson");
-        const data = await response.json();
-        const communesFiltrees = {
-            type: "FeatureCollection",
-            features: data.features.filter(f =>
-                f.properties.code && f.properties.code.startsWith(codeDep.padStart(2, '0'))
-            )
-        };
 
-        layerCommunes = L.geoJSON(communesFiltrees, {
+    const fileName = deptFiles[codeDep];
+    if (!fileName) {
+        console.error(`Fichier GeoJSON non trouvé pour le département ${codeDep}`);
+        return;
+    }
+
+    try {
+        const response = await fetch(`donnees_concours/${fileName}`);
+        const data = await response.json();
+
+        layerCommunes = L.geoJSON(data, {
             style: styleCom,
             onEachFeature: (feature, layer) => {
                 const codeCommune = feature.properties.code.padStart(5, '0');
@@ -103,11 +108,11 @@ async function chargerCommunesParDep(codeDep) {
             }
         }).addTo(map);
     } catch (err) {
-        console.error("Erreur chargement communes:", err);
+        console.error(`Erreur chargement communes pour ${codeDep}:`, err);
     }
 }
 
-// --- AFFICHAGE DES ESPÈCES (exposants visibles) ---
+// --- AFFICHAGE DES ESPÈCES (AVEC SONS) ---
 function afficherOiseaux(codeCommune, nomCommune) {
     const codeNorm = codeCommune.toString().padStart(5, '0');
     const oiseauxCommune = oiseauxData.filter(o => o.codeinseecommune === codeNorm);
@@ -137,8 +142,11 @@ function afficherOiseaux(codeCommune, nomCommune) {
         badge.className = 'espece-badge';
 
         const img = document.createElement('img');
-        img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
+        img.src = `photos/${espece.replace(/ /g, '_')}.jpg`; // Chemin vers tes photos
         img.alt = espece;
+        img.onerror = () => {
+            img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
+        };
 
         const countSpan = document.createElement('span');
         countSpan.className = 'espece-count';
@@ -148,11 +156,24 @@ function afficherOiseaux(codeCommune, nomCommune) {
         badge.appendChild(countSpan);
         container.appendChild(badge);
 
-        badge.onclick = () => afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune);
+        // Ajout du son au clic
+        badge.onclick = () => {
+            playChant(espece);
+            afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune);
+        };
     });
 }
 
-// --- AFFICHAGE DES STATISTIQUES (inchangé) ---
+// --- LECTURE DU SON ---
+function playChant(espece) {
+    const audio = new Audio(`sons/${espece.replace(/ /g, '_')}.mp3`);
+    audio.play().catch(e => {
+        console.error(`Erreur lecture son pour ${espece}:`, e);
+        alert(`Le chant de ${espece} n'est pas disponible.`);
+    });
+}
+
+// --- AFFICHAGE DES STATISTIQUES (INCHANGÉ) ---
 function afficherStatsEspece(espece, observations, nomCommune) {
     const popup = document.getElementById('popup-stats');
     popup.innerHTML = '';
@@ -211,7 +232,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
             style: styleDep,
             onEachFeature: (feature, layer) => {
                 layer.on('click', async () => {
-                    const codeDep = feature.properties.code;
+                    const codeDep = feature.properties.code.toString();
                     console.log("Département cliqué:", codeDep);
                     await chargerTousLesOiseaux(codeDep);
                     chargerCommunesParDep(codeDep);
@@ -220,12 +241,3 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
-
-
-
-badge.onclick = () => {
-    playChant(espece);
-    afficherStatsEspece(...);
-};
-
-
