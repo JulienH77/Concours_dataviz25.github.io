@@ -1,42 +1,59 @@
+/* Reset et base */
 body {
-    font-family: Arial, sans-serif;
-    margin: 0.5%;
-    overflow: hidden;
-}
-h1 {
-    text-align: center;
-    font-family: impact;
-    font-weight: 600;
-    font-size: 2.2em;
-}
-#map {
-    width: 80%;
-    height: 80vh;
-    z-index: 1;
-    left: 10%;
-    right: 10%;
-    border-radius: 20px 20px 0 0;
-    border: 3mm ridge rgba(211, 220, 50, 0.6);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    color: #333;
 }
 
+#header {
+    text-align: center;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    margin: 0;
+    font-family: 'Impact', Charcoal, sans-serif;
+    font-size: 2.5em;
+    color: #2c3e50;
+}
+
+/* Carte */
+#map {
+    width: 100%;
+    height: 70vh;
+    margin: 0 auto;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Conteneur des espèces (full width) */
 #especes-container {
+    width: 100%;
+    max-width: 100%;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 15px;
-    margin: 10px auto;
-    padding: 10px;
-    background-color: rgba(255, 255, 255, 0.8);
+    gap: 12px;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.9);
     border-radius: 10px;
-    width: 80%;
-    max-width: 800px;
+    margin: 10px auto;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
+/* Badges d'espèces */
 .espece-badge {
-    width: 70px;
-    height: 70px;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    background-color: #f0f0f0;
+    background-color: #f9f9f9;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -44,12 +61,14 @@ h1 {
     border: 2px solid #ddd;
     cursor: pointer;
     position: relative;
-    transition: transform 0.2s;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .espece-badge:hover {
-    transform: scale(1.1);
-    border-color: #aaa;
+    transform: scale(1.05);
+    border-color: #999;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .espece-badge img {
@@ -58,22 +77,48 @@ h1 {
     object-fit: cover;
 }
 
+/* Compteur d'observations (en haut à droite, AU-DESSUS du badge) */
 .espece-count {
     position: absolute;
     top: -5px;
     right: -5px;
-    background-color: red;
+    background-color: #e74c3c;
     color: white;
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    z-index: 10; /* Pour être au-dessus du badge */
 }
 
+/* Loader */
+#loader {
+    margin-top: 10px;
+    font-style: italic;
+    color: #7f8c8d;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Popup Leaflet personnalisée */
+.leaflet-popup-content-wrapper {
+    border-radius: 8px !important;
+    padding: 10px !important;
+}
+
+.leaflet-popup-content {
+    margin: 0 !important;
+    font-size: 14px !important;
+}
+
+/* Popup stats (détails espèce) */
 #popup-stats {
     position: fixed;
     top: 50%;
@@ -82,9 +127,9 @@ h1 {
     background-color: white;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     z-index: 1000;
-    max-width: 500px;
+    max-width: 90%;
     max-height: 80vh;
     overflow-y: auto;
 }
@@ -95,8 +140,13 @@ h1 {
 
 .popup-close {
     position: absolute;
-    top: 5px;
-    right: 10px;
+    top: 10px;
+    right: 15px;
     font-size: 20px;
     cursor: pointer;
+    color: #777;
+}
+
+.popup-close:hover {
+    color: #333;
 }
