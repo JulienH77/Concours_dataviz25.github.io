@@ -1,71 +1,82 @@
 // --- STYLES LEAFLET ---
 const styleDep = {
-    color: "black",
-    weight: 3,
+    color: "#3498db",
+    weight: 2,
     opacity: 0.8,
-    fill: true,
-    fillColor: "white",
-    fillOpacity: 0.75
+    fillOpacity: 0.5,
+    fillColor: "#3498db"
 };
 
 const styleCom = {
-    color: "black",
+    color: "#2ecc71",
     weight: 1,
-    opacity: 0.5,
-    fill: true,
-    fillColor: "white",
-    fillOpacity: 0.001
+    opacity: 0.7,
+    fillOpacity: 0.3,
+    fillColor: "#2ecc71"
 };
 
 // --- INIT CARTE ---
 const map = L.map('map').setView([48.8021, 5.8844], 8);
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '© Esri'
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
 }).addTo(map);
 
 let layerCommunes = null;
 let oiseauxData = [];
 const annees = [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022];
+const loader = document.getElementById('loader');
 
-// --- CHARGEMENT DE TOUS LES CSV (2012-2022) ---
-async function chargerTousLesOiseaux(codeDep) {
-    oiseauxData = [];
-    for (const annee of annees) {
-        const url = `donnees_concours/oiseaux_${annee}.csv`;
-        try {
-            const response = await fetch(url);
-            const txt = await response.text();
-            const lignes = txt.split('\n').slice(1); // Enlève l'entête
-            lignes.forEach((l, i) => {
-                const cols = l.split(';');
-                if (cols.length < 10) return;
-                let code = cols[9]?.trim(); // codeinseecommune (index 9)
-                if (!code) return;
-                code = code.padStart(5, '0');
-                if (code.startsWith(codeDep.padStart(2, '0'))) {
-                    oiseauxData.push({
-                        nomScientifique: cols[0]?.trim(),
-                        nomVernaculaire: cols[1]?.trim(),
-                        espece: cols[3]?.trim(),
-                        genre: cols[4]?.trim(),
-                        famille: cols[5]?.trim(),
-                        especeDirectiveEuropeenne: cols[6]?.trim(),
-                        especeEvalueeLR: cols[7]?.trim(),
-                        especeReglementee: cols[8]?.trim(),
-                        dateObservation: cols[10]?.trim(),
-                        codeinseecommune: code,
-                        annee: annee
-                    });
-                }
-            });
-        } catch (err) {
-            console.error(`Erreur chargement oiseaux ${annee}:`, err);
-        }
-    }
-    console.log(`Données chargées pour le département ${codeDep}: ${oiseauxData.length} observations`);
+// --- AFFICHER/MASQUER LE LOADER ---
+function setLoading(isLoading) {
+    loader.classList.toggle('hidden', !isLoading);
 }
 
-// --- CHARGEMENT DES COMMUNES (inchangé) ---
+// --- CHARGEMENT OPTIMISÉ DES CSV (parallèle) ---
+async function chargerTousLesOiseaux(codeDep) {
+    setLoading(true);
+    oiseauxData = [];
+    const promises = annees.map(annee =>
+        fetch(`donnees_concours/oiseaux_${annee}.csv`)
+            .then(r => r.text())
+            .then(txt => {
+                const lignes = txt.split('\n').slice(1);
+                return lignes.map(l => {
+                    const cols = l.split(';');
+                    if (cols.length < 10) return null;
+                    let code = cols[9]?.trim();
+                    if (!code) return null;
+                    code = code.padStart(5, '0');
+                    if (code.startsWith(codeDep.padStart(2, '0'))) {
+                        return {
+                            nomScientifique: cols[0]?.trim(),
+                            nomVernaculaire: cols[1]?.trim(),
+                            espece: cols[3]?.trim(),
+                            genre: cols[4]?.trim(),
+                            famille: cols[5]?.trim(),
+                            especeDirectiveEuropeenne: cols[6]?.trim(),
+                            especeEvalueeLR: cols[7]?.trim(),
+                            especeReglementee: cols[8]?.trim(),
+                            dateObservation: cols[10]?.trim(),
+                            codeinseecommune: code,
+                            annee: annee
+                        };
+                    }
+                    return null;
+                }).filter(Boolean);
+            })
+            .catch(err => {
+                console.error(`Erreur chargement oiseaux ${annee}:`, err);
+                return [];
+            })
+    );
+
+    const results = await Promise.all(promises);
+    oiseauxData = results.flat();
+    console.log(`Données chargées pour le département ${codeDep}: ${oiseauxData.length} observations`);
+    setLoading(false);
+}
+
+// --- CHARGEMENT DES COMMUNES (avec popup Leaflet) ---
 async function chargerCommunesParDep(codeDep) {
     if (layerCommunes) map.removeLayer(layerCommunes);
     try {
@@ -77,9 +88,13 @@ async function chargerCommunesParDep(codeDep) {
                 f.properties.code && f.properties.code.startsWith(codeDep.padStart(2, '0'))
             )
         };
+
         layerCommunes = L.geoJSON(communesFiltrees, {
             style: styleCom,
             onEachFeature: (feature, layer) => {
+                const codeCommune = feature.properties.code.padStart(5, '0');
+                const count = oiseauxData.filter(o => o.codeinseecommune === codeCommune).length;
+                layer.bindPopup(`<b>${feature.properties.nom}</b><br>Recensements: ${count}`);
                 layer.on('click', () => {
                     afficherOiseaux(feature.properties.code, feature.properties.nom);
                 });
@@ -100,7 +115,7 @@ function afficherOiseaux(codeCommune, nomCommune) {
     container.innerHTML = '';
 
     if (oiseauxCommune.length === 0) {
-        container.innerHTML = `<p>Aucun oiseau observé sur ${nomCommune}</p>`;
+        container.innerHTML = `<p style="text-align: center; width: 100%;">Aucun oiseau observé sur ${nomCommune}</p>`;
         return;
     }
 
@@ -111,14 +126,17 @@ function afficherOiseaux(codeCommune, nomCommune) {
         especesCount[espece] = (especesCount[espece] || 0) + 1;
     });
 
+    // Trie les espèces par nombre d'observations (décroissant)
+    const especesTriees = Object.entries(especesCount).sort((a, b) => b[1] - a[1]);
+
     // Affiche un badge par espèce
-    for (const [espece, count] of Object.entries(especesCount)) {
+    especesTriees.forEach(([espece, count]) => {
         const badge = document.createElement('div');
         badge.className = 'espece-badge';
 
         // Image placeholder (à remplacer par tes photos)
         const img = document.createElement('img');
-        img.src = `https://via.placeholder.com/70?text=${encodeURIComponent(espece.charAt(0))}`;
+        img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
         img.alt = espece;
 
         // Nombre d'observations en exposant
@@ -132,7 +150,7 @@ function afficherOiseaux(codeCommune, nomCommune) {
 
         // Événement pour afficher la popup
         badge.onclick = () => afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune);
-    }
+    });
 }
 
 // --- AFFICHAGE DES STATISTIQUES DANS UNE POPUP ---
@@ -140,15 +158,15 @@ function afficherStatsEspece(espece, observations, nomCommune) {
     const popup = document.getElementById('popup-stats');
     popup.innerHTML = '';
 
-    // Récupère les infos de la première observation (toutes ont les mêmes métadonnées)
+    // Récupère les infos de la première observation
     const stats = {
         nomScientifique: observations[0].nomScientifique,
         nomVernaculaire: observations[0].nomVernaculaire,
         genre: observations[0].genre,
         famille: observations[0].famille,
-        especeDirectiveEuropeenne: observations[0].especeDirectiveEuropeenne,
-        especeEvalueeLR: observations[0].especeEvalueeLR,
-        especeReglementee: observations[0].especeReglementee,
+        especeDirectiveEuropeenne: observations[0].especeDirectiveEuropeenne === 'true' ? "Oui" : "Non",
+        especeEvalueeLR: observations[0].especeEvalueeLR === 'true' ? "Oui" : "Non",
+        especeReglementee: observations[0].especeReglementee === 'true' ? "Oui" : "Non",
         observationsParAnnee: {}
     };
 
@@ -161,22 +179,29 @@ function afficherStatsEspece(espece, observations, nomCommune) {
     // Crée le contenu de la popup
     let content = `
         <div class="popup-close" onclick="document.getElementById('popup-stats').classList.add('popup-hidden')">×</div>
-        <h2>${espece}</h2>
-        <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
-        <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
-        <p><strong>Genre:</strong> ${stats.genre}</p>
-        <p><strong>Famille:</strong> ${stats.famille}</p>
-        <p><strong>Espèce directive européenne:</strong> ${stats.especeDirectiveEuropeenne}</p>
-        <p><strong>Espèce évaluée Liste Rouge:</strong> ${stats.especeEvalueeLR}</p>
+        <h2 style="margin-top: 0; color: #2c3e50;">${espece}</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
+                <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
+                <p><strong>Genre:</strong> ${stats.genre}</p>
+            </div>
+            <div>
+                <p><strong>Famille:</strong> ${stats.famille}</p>
+                <p><strong>Espèce directive européenne:</strong> ${stats.especeDirectiveEuropeenne}</p>
+                <p><strong>Espèce évaluée Liste Rouge:</strong> ${stats.especeEvalueeLR}</p>
+            </div>
+        </div>
         <p><strong>Espèce réglementée:</strong> ${stats.especeReglementee}</p>
         <p><strong>Observations à ${nomCommune}:</strong></p>
-        <ul>
+        <ul style="columns: 2; list-style-type: none; padding: 0;">
     `;
 
-    // Ajoute les observations par année
-    for (const [annee, count] of Object.entries(stats.observationsParAnnee).sort()) {
-        content += `<li>${annee}: ${count} observation(s)</li>`;
-    }
+    // Ajoute les observations par année (triées)
+    const anneesTriees = Object.keys(stats.observationsParAnnee).sort();
+    anneesTriees.forEach(annee => {
+        content += `<li style="padding: 5px 0;">• ${annee}: ${stats.observationsParAnnee[annee]} observation(s)</li>`;
+    });
 
     content += `</ul>`;
     popup.innerHTML = content;
