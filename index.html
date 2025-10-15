@@ -30,7 +30,10 @@
     <div id="especes-container"></div>
     <!-- Popup et overlay -->
     <div id="popup-overlay" class="hidden"></div>
-    <div id="popup-stats" class="hidden"></div>
+    <div id="popup-stats" class="hidden">
+        <div class="popup-close" onclick="fermerPopup()">×</div>
+        <div id="popup-content"></div>
+    </div>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <!-- Script principal -->
@@ -44,3 +47,4 @@
     </script>
 </body>
 </html>
+
