@@ -252,12 +252,14 @@ async function chargerCommunesParDep(codeDep) {
                     const codeCommune = feature.properties.code.padStart(5, '0');
                     const oiseauxCommune = window.oiseauxData.filter(o => o.codeinseecommune === codeCommune);
 
-                    // Joue le son si des oiseaux avec chant sont présents
-                    if (oiseauxCommune.length > 0) {
-                        const especeAvecSon = oiseauxCommune.find(o => sonsEspeces[o.nomScientifique]);
-                        if (especeAvecSon) {
-                            playChant(especeAvecSon.nomScientifique);
-                        }
+                    // Joue TOUS les chants disponibles pour cette commune
+                    const especesAvecSon = [...new Set(oiseauxCommune.map(o => o.nomScientifique))]
+                        .filter(nomScientifique => sonsEspeces[nomScientifique]);
+
+                    if (especesAvecSon.length > 0) {
+                        especesAvecSon.forEach(nomScientifique => {
+                            playChant(nomScientifique);
+                        });
                     }
 
                     afficherOiseaux(codeCommune, feature.properties.nom, oiseauxCommune);
@@ -268,6 +270,7 @@ async function chargerCommunesParDep(codeDep) {
         console.error(`Erreur chargement communes:`, err);
     }
 }
+
 
 // --- AFFICHAGE DES ESPÈCES ---
 function afficherOiseaux(codeCommune, nomCommune, oiseauxCommune) {
@@ -346,7 +349,7 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
 
     content += `</ul>`;
 
-    // Ajoute l'iframe si disponible
+    // Ajoute l'iframe SI un enregistrement existe pour cette espèce
     if (sonsEspeces[stats.nomScientifique]?.iframe) {
         content += `
             <div style="margin-top: 15px; text-align: center;">
@@ -361,25 +364,34 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
             </div>
         `;
     } else {
-        content += `<p style="color: #7f8c8d; margin-top: 10px;">Aucun enregistrement disponible.</p>`;
+        content += `<p style="color: #7f8c8d; margin-top: 10px;">Aucun enregistrement audio disponible.</p>`;
     }
 
     popupContent.innerHTML = content;
 }
 
-// --- LECTURE DU SON ---
+// --- LECTURE DU SON  ---
 function playChant(nomScientifique) {
     const sonData = sonsEspeces[nomScientifique];
     if (!sonData?.son) {
-        console.warn(`Aucun son pour ${nomScientifique}`);
+        console.warn(`Aucun son configuré pour ${nomScientifique}`);
         return;
     }
-
-    const audio = new Audio(sonData.son);
-    audio.play().catch(e => {
-        console.error("Erreur de lecture:", e);
-        alert("Impossible de lire le chant. Vérifiez votre connexion.");
-    });
+    // Vérifie que l'URL est valide avant de jouer
+    fetch(sonData.son, { method: 'HEAD' })
+        .then(response => {
+            if (response.ok) {
+                const audio = new Audio(sonData.son);
+                audio.play().catch(e => {
+                    console.error("Erreur de lecture audio:", e);
+                });
+            } else {
+                console.error(`URL invalide pour ${nomScientifique}`);
+            }
+        })
+        .catch(() => {
+            console.error(`Impossible de vérifier l'URL pour ${nomScientifique}`);
+        });
 }
 
 // --- CHARGEMENT DES DÉPARTEMENTS ---
@@ -403,5 +415,6 @@ fetch("donnees_concours/departements-grand-est.geojson")
     </script>
 </body>
 </html>
+
 
 
