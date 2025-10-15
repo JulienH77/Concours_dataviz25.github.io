@@ -19,8 +19,8 @@ const styleCom = {
 
 // --- INIT CARTE ET ÉLÉMENTS DOM ---
 const map = L.map('map').setView([48.8021, 5.8844], 8);
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '© Esri'
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
 }).addTo(map);
 
 let layerCommunes = null;
@@ -44,7 +44,7 @@ const popupStats = document.getElementById('popup-stats');
 
 // --- MAPPAGE DES SONS (XENO-CANTO) ---
 const sonsEspeces = {
-    // Exemple : "Merle noir": "https://www.xeno-canto.org/123456/download",
+    // Exemple: "Merle noir": "https://www.xeno-canto.org/123456/download",
 };
 
 // --- AFFICHER/MASQUER LE GIF DE CHARGEMENT ---
@@ -137,14 +137,13 @@ function afficherOiseaux(codeCommune, nomCommune) {
         return;
     }
 
-    // Compte le nombre d'observations par espèce
+    // Compte et trie les espèces
     const especesCount = {};
     oiseauxCommune.forEach(o => {
         const espece = o.espece;
         especesCount[espece] = (especesCount[espece] || 0) + 1;
     });
 
-    // Trie les espèces par nombre d'observations (DÉCROISSANT)
     const especesTriees = Object.entries(especesCount).sort((a, b) => b[1] - a[1]);
 
     // Affiche les badges (max 51)
@@ -173,10 +172,10 @@ function afficherOiseaux(codeCommune, nomCommune) {
     });
 }
 
-// --- AFFICHAGE DES STATISTIQUES (POPUP CORRIGÉE) ---
+// --- AFFICHAGE DES STATISTIQUES ---
 function afficherStatsEspece(espece, observations, nomCommune) {
-    // Affiche l'overlay
     popupOverlay.classList.remove('hidden');
+    popupStats.classList.remove('hidden');
 
     const stats = {
         nomScientifique: observations[0].nomScientifique,
@@ -204,7 +203,6 @@ function afficherStatsEspece(espece, observations, nomCommune) {
 
     content += `</ul>`;
     popupStats.innerHTML = content;
-    popupStats.classList.remove('hidden');
 }
 
 // --- FERMETURE DE LA POPUP ---
