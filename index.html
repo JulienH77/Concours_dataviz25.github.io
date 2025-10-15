@@ -8,13 +8,25 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <!-- Polices Google -->
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Patrick+Hand&display=swap" rel="stylesheet">
-    <!-- Ton CSS -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- CSS personnalisé -->
     <style>
         /* CSS critique en ligne pour éviter les problèmes de chargement */
-        body { margin: 0; padding: 0; font-family: 'Cormorant Garamond', serif; }
-        #popup-stats { display: none !important; } /* Masque la popup au chargement */
+        body {
+            font-family: 'Cormorant Garamond', serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f7f3;
+            color: #3a3a3a;
+            overflow-x: hidden;
+        }
+        #popup-stats {
+            display: none !important;
+        }
+        #loading-screen {
+            display: none;
+        }
     </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="header">
@@ -22,16 +34,23 @@
         <div class="feuille-decor"></div>
     </div>
     <div id="map"></div>
-    <!-- GIF de chargement (masqué par défaut) -->
-    <div id="loading-screen" style="display: none;">
-        <img src="IMG/canard_loading.gif" alt="Chargement...">
+    <!-- GIF de chargement -->
+    <div id="loading-screen">
+        <img src="IMG/canard_loading.gif" alt="Chargement en cours...">
     </div>
     <div id="especes-container"></div>
-    <!-- Popup masquée par défaut -->
-    <div id="popup-stats" class="popup-hidden"></div>
+    <!-- Popup -->
+    <div id="popup-stats"></div>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <!-- Ton script -->
+    <!-- Script principal -->
     <script src="script.js"></script>
+    <!-- Pré-chargement du GIF pour un rendu fluide -->
+    <script>
+        window.onload = function() {
+            const loadingImg = new Image();
+            loadingImg.src = "IMG/canard_loading.gif";
+        };
+    </script>
 </body>
 </html>
