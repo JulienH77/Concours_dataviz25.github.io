@@ -19,8 +19,8 @@ const styleCom = {
 
 // --- INIT CARTE ET ÉLÉMENTS DOM ---
 const map = L.map('map').setView([48.8021, 5.8844], 8);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '© Esri'
 }).addTo(map);
 
 let layerCommunes = null;
@@ -43,8 +43,10 @@ const popupStats = document.getElementById('popup-stats');
 
 // --- MAPPAGE DES SONS (XENO-CANTO) ---
 const sonsEspeces = {
-    // Exemple : à remplir avec tes liens
+    // Exemple : à remplir avec tes liens Xeno-Canto
     "Merle noir": "https://www.xeno-canto.org/123456/download",
+    // "Étourneau sansonnet": "https://www.xeno-canto.org/789012/download",
+    // Ajoute tes autres espèces ici
 };
 
 // --- AFFICHER/MASQUER LE GIF DE CHARGEMENT ---
@@ -123,7 +125,7 @@ async function chargerCommunesParDep(codeDep) {
     }
 }
 
-// --- AFFICHAGE DES ESPÈCES ---
+// --- AFFICHAGE DES ESPÈCES (TRI DÉCROISSANT) ---
 function afficherOiseaux(codeCommune, nomCommune) {
     const codeNorm = codeCommune.toString().padStart(5, '0');
     const oiseauxCommune = oiseauxData.filter(o => o.codeinseecommune === codeNorm);
@@ -137,19 +139,27 @@ function afficherOiseaux(codeCommune, nomCommune) {
         return;
     }
 
+    // Compte le nombre d'observations par espèce
     const especesCount = {};
     oiseauxCommune.forEach(o => {
         const espece = o.espece;
         especesCount[espece] = (especesCount[espece] || 0) + 1;
     });
 
-    for (const [espece, count] of Object.entries(especesCount)) {
+    // Trie les espèces par nombre d'observations (DÉCROISSANT)
+    const especesTriees = Object.entries(especesCount).sort((a, b) => b[1] - a[1]);
+
+    // Affiche un badge par espèce (dans l'ordre trié)
+    especesTriees.forEach(([espece, count]) => {
         const badge = document.createElement('div');
         badge.className = 'espece-badge';
 
         const img = document.createElement('img');
-        img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
+        img.src = `photos/${espece.replace(/ /g, '_')}.jpg`;
         img.alt = espece;
+        img.onerror = () => {
+            img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
+        };
 
         const countSpan = document.createElement('span');
         countSpan.className = 'espece-count';
@@ -159,28 +169,38 @@ function afficherOiseaux(codeCommune, nomCommune) {
         badge.appendChild(countSpan);
         container.appendChild(badge);
 
+        // Événement pour afficher la popup
         badge.onclick = () => {
             if (sonsEspeces[espece]) playChant(espece);
             afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune);
         };
-    }
+    });
 }
 
 // --- LECTURE DU SON (XENO-CANTO) ---
 function playChant(espece) {
     const urlSon = sonsEspeces[espece];
     if (!urlSon) {
-        console.warn(`Aucun son pour ${espece}`);
+        console.warn(`Aucun son configuré pour ${espece}`);
         return;
     }
     const audio = new Audio(urlSon);
     audio.play().catch(e => console.error(`Erreur lecture son:`, e));
 }
 
-// --- AFFICHAGE DES STATISTIQUES ---
+// --- AFFICHAGE DES STATISTIQUES (POPUP CORRIGÉE) ---
 function afficherStatsEspece(espece, observations, nomCommune) {
+    // Crée l'overlay si inexistant
+    let overlay = document.querySelector('.popup-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'popup-overlay';
+        document.body.appendChild(overlay);
+    }
+
     const stats = {
         nomScientifique: observations[0].nomScientifique,
+        nomVernaculaire: observations[0].nomVernaculaire,
         observationsParAnnee: {}
     };
 
@@ -191,8 +211,9 @@ function afficherStatsEspece(espece, observations, nomCommune) {
 
     let content = `
         <div class="popup-close" onclick="fermerPopup()">×</div>
-        <h2>${espece}</h2>
+        <h2 style="color: #5e8c61; font-family: 'Patrick Hand', cursive;">${espece}</h2>
         <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
+        <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
         <p><strong>Observations à ${nomCommune}:</strong></p>
         <ul>
     `;
@@ -203,12 +224,18 @@ function afficherStatsEspece(espece, observations, nomCommune) {
 
     content += `</ul>`;
     popupStats.innerHTML = content;
-    popupStats.classList.remove('popup-hidden');
+    popupStats.style.display = 'block';
+    overlay.style.display = 'block';
+
+    // Fermeture au clic sur l'overlay
+    overlay.onclick = fermerPopup;
 }
 
 // --- FERMETURE DE LA POPUP ---
 function fermerPopup() {
-    popupStats.classList.add('popup-hidden');
+    document.getElementById('popup-stats').style.display = 'none';
+    const overlay = document.querySelector('.popup-overlay');
+    if (overlay) overlay.style.display = 'none';
 }
 
 // --- CHARGEMENT DES DÉPARTEMENTS ---
