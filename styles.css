@@ -141,3 +141,18 @@
 }
 
 
+/* Style popup champêtre */
+.leaflet-popup-content-wrapper.popup-champetre {
+  background-color: #f5f0e6 !important;
+  border: 2px solid #8b6f47 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 0 10px rgba(139, 111, 71, 0.4);
+  font-family: 'Patrick Hand', cursive;
+  color: #3b3b3b;
+  padding: 10px;
+}
+.leaflet-popup-content h3 {
+  margin-top: 0;
+  color: #5e8c61;
+}
+
