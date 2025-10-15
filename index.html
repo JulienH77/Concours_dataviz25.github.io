@@ -3,30 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/47/47244.png" type="image/png">
     <title>Le Grand-Est chanté</title>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <!-- Polices Google -->
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Patrick+Hand&display=swap" rel="stylesheet">
     <!-- CSS personnalisé -->
-    <style>
-        /* CSS critique en ligne pour éviter les problèmes de chargement */
-        body {
-            font-family: 'Cormorant Garamond', serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f7f3;
-            color: #3a3a3a;
-            overflow-x: hidden;
-        }
-        #popup-stats {
-            display: none !important;
-        }
-        #loading-screen {
-            display: none;
-        }
-    </style>
     <link rel="stylesheet" href="styles.css">
+    <!-- Pré-chargement du GIF -->
+    <style>
+        #popup-stats { display: none; }
+        #loading-screen { display: none; }
+    </style>
 </head>
 <body>
     <div id="header">
@@ -36,16 +25,17 @@
     <div id="map"></div>
     <!-- GIF de chargement -->
     <div id="loading-screen">
-        <img src="IMG/canard_loading.gif" alt="Chargement en cours...">
+        <img src="IMG/canard_loading.gif" alt="Chargement...">
     </div>
     <div id="especes-container"></div>
-    <!-- Popup -->
-    <div id="popup-stats"></div>
+    <!-- Popup et overlay -->
+    <div id="popup-overlay" class="hidden"></div>
+    <div id="popup-stats" class="hidden"></div>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <!-- Script principal -->
     <script src="script.js"></script>
-    <!-- Pré-chargement du GIF pour un rendu fluide -->
+    <!-- Pré-chargement du GIF -->
     <script>
         window.onload = function() {
             const loadingImg = new Image();
