@@ -5,12 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/47/47244.png" type="image/png">
     <title>Le Grand-Est chanté</title>
+    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Patrick+Hand&display=swap" rel="stylesheet">
+    <!-- Polices -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond&family=Patrick+Hand&display=swap" rel="stylesheet">
     <style>
-        /* CSS minimal pour la popup */
-        .hidden { display: none !important; }
+        body { margin: 0; padding: 0; font-family: 'Cormorant Garamond', serif; background-color: #f9f7f3; }
+        #map { width: 100%; height: 70vh; }
+        #loading-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #loading-screen img {
+            width: 200px;
+            height: 200px;
+            border-radius: 30px;
+        }
+        #especes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: white;
+        }
+        .espece-badge {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #5e8c61;
+            cursor: pointer;
+            position: relative;
+        }
+        .espece-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: red;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
         #popup-overlay {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
@@ -18,9 +72,9 @@
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 1000;
-            display: none;
         }
         #popup-stats {
+            display: none;
             position: fixed;
             top: 50%;
             left: 50%;
@@ -28,40 +82,156 @@
             background-color: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             z-index: 1001;
             width: 80%;
             max-width: 500px;
-            display: none;
         }
         .popup-close {
             position: absolute;
             top: 10px;
-            right: 15px;
-            font-size: 22px;
+            right: 10px;
             cursor: pointer;
-            color: #5e8c61;
+            font-size: 20px;
         }
     </style>
 </head>
 <body>
-    <div id="header">
-        <h1>Le Grand-Est chanté</h1>
-    </div>
+    <h1 style="text-align: center; font-family: 'Patrick Hand', cursive; color: #5e8c61;">Le Grand-Est chanté</h1>
     <div id="map"></div>
-    <div id="loading-screen" class="hidden">
-        <img src="IMG/canard_loading.gif" alt="Chargement..." style="width: 250px; height: 250px; border-radius: 30px;">
+    <div id="loading-screen">
+        <img src="IMG/canard_loading.gif" alt="Chargement...">
     </div>
     <div id="especes-container"></div>
-    <!-- Popup et overlay -->
-    <div id="popup-overlay" class="hidden"></div>
-    <div id="popup-stats" class="hidden">
-        <div class="popup-close" onclick="fermerPopup()">×</div>
+    <div id="popup-overlay"></div>
+    <div id="popup-stats">
+        <span class="popup-close" onclick="fermerPopup()">×</span>
         <div id="popup-content"></div>
     </div>
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="script.js"></script>
+    <!-- Script principal -->
+    <script>
+        // --- INIT CARTE ---
+const map = L.map('map').setView([48.8021, 5.8844], 8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+}).addTo(map);
+
+// Éléments DOM
+const loadingScreen = document.getElementById('loading-screen');
+const popupOverlay = document.getElementById('popup-overlay');
+const popupStats = document.getElementById('popup-stats');
+const popupContent = document.getElementById('popup-content');
+const especesContainer = document.getElementById('especes-container');
+
+// --- STYLES LEAFLET ---
+const styleDep = { color: "black", weight: 3, opacity: 0.8, fill: true, fillColor: "white", fillOpacity: 0.75 };
+const styleCom = { color: "black", weight: 1, opacity: 0.5, fill: true, fillColor: "white", fillOpacity: 0.001 };
+
+// --- MAPPAGE DES SONS (exemple) ---
+const sonsEspeces = {
+    "Turdus merula": "https://www.xeno-canto.org/965521/download" // Merle noir
+};
+
+// --- AFFICHER/MASQUER LE CHARGEMENT ---
+function setLoading(show) {
+    loadingScreen.style.display = show ? 'flex' : 'none';
+}
+
+// --- AFFICHER/MASQUER LA POPUP ---
+function afficherPopup() {
+    popupOverlay.style.display = 'block';
+    popupStats.style.display = 'block';
+}
+
+function fermerPopup() {
+    popupOverlay.style.display = 'none';
+    popupStats.style.display = 'none';
+}
+
+// --- CHARGEMENT DES DÉPARTEMENTS (exemple simplifié) ---
+fetch("donnees_concours/departements-grand-est.geojson")
+    .then(response => response.json())
+    .then(data => {
+        L.geoJSON(data, {
+            style: styleDep,
+            onEachFeature: (feature, layer) => {
+                layer.on('click', () => {
+                    setLoading(true);
+                    // Simule le chargement des données (à remplacer par ton code réel)
+                    setTimeout(() => {
+                        setLoading(false);
+                        // Exemple: affiche des espèces factices
+                        afficherEspecesFactices(feature.properties.nom);
+                    }, 1000);
+                });
+            }
+        }).addTo(map);
+    })
+    .catch(err => console.error("Erreur:", err));
+
+// --- AFFICHAGE DES ESPÈCES (exemple simplifié) ---
+function afficherEspecesFactices(nomCommune) {
+    especesContainer.innerHTML = '';
+    const especesExemple = [
+        { nom: "Merle noir", nomScientifique: "Turdus merula", count: 15 },
+        { nom: "Étourneau", nomScientifique: "Sturnus vulgaris", count: 8 },
+        { nom: "Pie bavarde", nomScientifique: "Pica pica", count: 12 }
+    ];
+
+    especesExemple.forEach(espece => {
+        const badge = document.createElement('div');
+        badge.className = 'espece-badge';
+        badge.innerHTML = `
+            <img src="https://via.placeholder.com/60?text=${espece.nom.charAt(0)}" alt="${espece.nom}" style="width: 90%; height: 90%; border-radius: 50%;">
+            <span class="espece-count">${espece.count}</span>
+        `;
+        badge.onclick = () => afficherStatsEspece(espece.nom, espece.nomScientifique, nomCommune);
+        especesContainer.appendChild(badge);
+    });
+}
+
+// --- AFFICHAGE DES STATS (exemple simplifié) ---
+function afficherStatsEspece(nom, nomScientifique, nomCommune) {
+    afficherPopup();
+    let content = `
+        <h2>${nom}</h2>
+        <p><strong>Nom scientifique:</strong> ${nomScientifique}</p>
+        <p><strong>Commune:</strong> ${nomCommune}</p>
+    `;
+
+    if (sonsEspeces[nomScientifique]) {
+        content += `
+            <button onclick="playChant('${nomScientifique}')" style="
+                background: #5e8c61;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 5px;
+                margin-top: 10px;
+                cursor: pointer;
+            ">Écouter le chant</button>
+        `;
+    }
+
+    popupContent.innerHTML = content;
+}
+
+// --- LECTURE DU SON ---
+function playChant(nomScientifique) {
+    const url = sonsEspeces[nomScientifique];
+    if (!url) {
+        alert("Aucun chant disponible pour cette espèce.");
+        return;
+    }
+
+    const audio = new Audio(url);
+    audio.play().catch(e => {
+        console.error("Erreur de lecture:", e);
+        alert("Impossible de lire le chant. Vérifiez votre connexion.");
+    });
+}
+
     </script>
 </body>
 </html>
-
