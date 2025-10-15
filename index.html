@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/47/47244.png" type="image/png">
     <title>Le Grand-Est chanté</title>
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <!-- Polices -->
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond&family=Patrick+Hand&display=swap" rel="stylesheet">
     <style>
         body { margin: 0; padding: 0; font-family: 'Cormorant Garamond', serif; background-color: #f9f7f3; }
@@ -24,11 +22,7 @@
             align-items: center;
             z-index: 1000;
         }
-        #loading-screen img {
-            width: 200px;
-            height: 200px;
-            border-radius: 30px;
-        }
+        #loading-screen img { width: 200px; height: 200px; border-radius: 30px; }
         #especes-container {
             display: flex;
             flex-wrap: wrap;
@@ -63,36 +57,6 @@
             justify-content: center;
             font-size: 10px;
         }
-        #popup-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-        #popup-stats {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            z-index: 1001;
-            width: 80%;
-            max-width: 500px;
-        }
-        .popup-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            cursor: pointer;
-            font-size: 20px;
-        }
     </style>
 </head>
 <body>
@@ -102,16 +66,9 @@
         <img src="IMG/canard_loading.gif" alt="Chargement...">
     </div>
     <div id="especes-container"></div>
-    <div id="popup-overlay"></div>
-    <div id="popup-stats">
-        <span class="popup-close" onclick="fermerPopup()">×</span>
-        <div id="popup-content"></div>
-    </div>
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <!-- Script principal -->
     <script>
-        // --- INIT CARTE ---
+       // --- INIT CARTE ---
 const map = L.map('map').setView([48.8021, 5.8844], 8);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
@@ -119,16 +76,13 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // Éléments DOM
 const loadingScreen = document.getElementById('loading-screen');
-const popupOverlay = document.getElementById('popup-overlay');
-const popupStats = document.getElementById('popup-stats');
-const popupContent = document.getElementById('popup-content');
 const especesContainer = document.getElementById('especes-container');
 
 // --- STYLES LEAFLET ---
 const styleDep = { color: "black", weight: 3, opacity: 0.8, fill: true, fillColor: "white", fillOpacity: 0.75 };
 const styleCom = { color: "black", weight: 1, opacity: 0.5, fill: true, fillColor: "white", fillOpacity: 0.001 };
 
-// --- MAPPAGE DES SONS (exemple) ---
+// --- MAPPAGE DES SONS (exemple avec Turdus merula) ---
 const sonsEspeces = {
     "Turdus merula": "https://www.xeno-canto.org/965521/download" // Merle noir
 };
@@ -138,99 +92,156 @@ function setLoading(show) {
     loadingScreen.style.display = show ? 'flex' : 'none';
 }
 
-// --- AFFICHER/MASQUER LA POPUP ---
-function afficherPopup() {
-    popupOverlay.style.display = 'block';
-    popupStats.style.display = 'block';
+// --- CHARGEMENT DES OISEAUX (TOUTES ANNÉES) ---
+async function chargerTousLesOiseaux(codeDep) {
+    setLoading(true);
+    let oiseauxData = [];
+    const annees = [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022];
+
+    const promises = annees.map(annee =>
+        fetch(`donnees_concours/oiseaux_${annee}.csv`)
+            .then(r => r.text())
+            .then(txt => {
+                const lignes = txt.split('\n').slice(1);
+                return lignes.map(l => {
+                    const cols = l.split(';');
+                    if (cols.length < 10) return null;
+                    let code = cols[9]?.trim();
+                    if (!code) return null;
+                    code = code.padStart(5, '0');
+                    if (code.startsWith(codeDep.padStart(2, '0'))) {
+                        return {
+                            nomScientifique: cols[0]?.trim(),
+                            nomVernaculaire: cols[1]?.trim(),
+                            espece: cols[3]?.trim(),
+                            codeinseecommune: code,
+                            annee: annee
+                        };
+                    }
+                    return null;
+                }).filter(Boolean);
+            })
+            .catch(err => {
+                console.error(`Erreur chargement oiseaux ${annee}:`, err);
+                return [];
+            })
+    );
+
+    const results = await Promise.all(promises);
+    oiseauxData = results.flat();
+    console.log(`Données chargées: ${oiseauxData.length} observations`);
+    setLoading(false);
+    return oiseauxData;
 }
 
-function fermerPopup() {
-    popupOverlay.style.display = 'none';
-    popupStats.style.display = 'none';
-}
+// --- CHARGEMENT DES COMMUNES (PAR DÉPARTEMENT) ---
+async function chargerCommunesParDep(codeDep) {
+    const deptFiles = {
+        "08": "communes_08.geojson", "10": "communes_10.geojson", "51": "communes_51.geojson",
+        "52": "communes_52.geojson", "54": "communes_54.geojson", "55": "communes_55.geojson",
+        "57": "communes_57.geojson", "67": "communes_67.geojson", "68": "communes_68.geojson",
+        "88": "communes_88.geojson"
+    };
 
-// --- CHARGEMENT DES DÉPARTEMENTS (exemple simplifié) ---
-fetch("donnees_concours/departements-grand-est.geojson")
-    .then(response => response.json())
-    .then(data => {
-        L.geoJSON(data, {
-            style: styleDep,
+    const fileName = deptFiles[codeDep];
+    if (!fileName) {
+        console.error(`Fichier GeoJSON non trouvé pour le département ${codeDep}`);
+        return;
+    }
+
+    try {
+        const response = await fetch(`donnees_concours/${fileName}`);
+        const data = await response.json();
+
+        if (window.layerCommunes) map.removeLayer(window.layerCommunes);
+
+        window.layerCommunes = L.geoJSON(data, {
+            style: styleCom,
             onEachFeature: (feature, layer) => {
-                layer.on('click', () => {
-                    setLoading(true);
-                    // Simule le chargement des données (à remplacer par ton code réel)
-                    setTimeout(() => {
-                        setLoading(false);
-                        // Exemple: affiche des espèces factices
-                        afficherEspecesFactices(feature.properties.nom);
-                    }, 1000);
+                layer.on('click', async () => {
+                    const codeCommune = feature.properties.code.padStart(5, '0');
+                    const oiseauxCommune = oiseauxData.filter(o => o.codeinseecommune === codeCommune);
+
+                    // Joue le son si des oiseaux sont présents
+                    if (oiseauxCommune.length > 0) {
+                        const especeAvecSon = oiseauxCommune.find(o => sonsEspeces[o.nomScientifique]);
+                        if (especeAvecSon) {
+                            playChant(especeAvecSon.nomScientifique);
+                        }
+                    }
+
+                    afficherOiseaux(codeCommune, feature.properties.nom, oiseauxCommune);
                 });
             }
         }).addTo(map);
-    })
-    .catch(err => console.error("Erreur:", err));
+    } catch (err) {
+        console.error(`Erreur chargement communes:`, err);
+    }
+}
 
-// --- AFFICHAGE DES ESPÈCES (exemple simplifié) ---
-function afficherEspecesFactices(nomCommune) {
+// --- AFFICHAGE DES ESPÈCES ---
+function afficherOiseaux(codeCommune, nomCommune, oiseauxCommune) {
     especesContainer.innerHTML = '';
-    const especesExemple = [
-        { nom: "Merle noir", nomScientifique: "Turdus merula", count: 15 },
-        { nom: "Étourneau", nomScientifique: "Sturnus vulgaris", count: 8 },
-        { nom: "Pie bavarde", nomScientifique: "Pica pica", count: 12 }
-    ];
 
-    especesExemple.forEach(espece => {
+    if (!oiseauxCommune || oiseauxCommune.length === 0) {
+        especesContainer.innerHTML = `<p style="text-align: center;">Aucun oiseau observé sur ${nomCommune}</p>`;
+        return;
+    }
+
+    // Compte les observations par espèce
+    const especesCount = {};
+    oiseauxCommune.forEach(o => {
+        const espece = o.espece;
+        especesCount[espece] = (especesCount[espece] || 0) + 1;
+    });
+
+    // Trie les espèces par nombre d'observations (décroissant)
+    const especesTriees = Object.entries(especesCount).sort((a, b) => b[1] - a[1]);
+
+    // Affiche tous les badges
+    especesTriees.forEach(([espece, count]) => {
         const badge = document.createElement('div');
         badge.className = 'espece-badge';
         badge.innerHTML = `
-            <img src="https://via.placeholder.com/60?text=${espece.nom.charAt(0)}" alt="${espece.nom}" style="width: 90%; height: 90%; border-radius: 50%;">
-            <span class="espece-count">${espece.count}</span>
+            <img src="https://via.placeholder.com/60?text=${espece.charAt(0)}" alt="${espece}" style="width: 90%; height: 90%; border-radius: 50%;">
+            <span class="espece-count">${count}</span>
         `;
-        badge.onclick = () => afficherStatsEspece(espece.nom, espece.nomScientifique, nomCommune);
         especesContainer.appendChild(badge);
     });
-}
-
-// --- AFFICHAGE DES STATS (exemple simplifié) ---
-function afficherStatsEspece(nom, nomScientifique, nomCommune) {
-    afficherPopup();
-    let content = `
-        <h2>${nom}</h2>
-        <p><strong>Nom scientifique:</strong> ${nomScientifique}</p>
-        <p><strong>Commune:</strong> ${nomCommune}</p>
-    `;
-
-    if (sonsEspeces[nomScientifique]) {
-        content += `
-            <button onclick="playChant('${nomScientifique}')" style="
-                background: #5e8c61;
-                color: white;
-                border: none;
-                padding: 8px 15px;
-                border-radius: 5px;
-                margin-top: 10px;
-                cursor: pointer;
-            ">Écouter le chant</button>
-        `;
-    }
-
-    popupContent.innerHTML = content;
 }
 
 // --- LECTURE DU SON ---
 function playChant(nomScientifique) {
     const url = sonsEspeces[nomScientifique];
     if (!url) {
-        alert("Aucun chant disponible pour cette espèce.");
+        console.warn(`Aucun son pour ${nomScientifique}`);
         return;
     }
 
     const audio = new Audio(url);
     audio.play().catch(e => {
         console.error("Erreur de lecture:", e);
-        alert("Impossible de lire le chant. Vérifiez votre connexion.");
     });
 }
+
+// --- CHARGEMENT DES DÉPARTEMENTS ---
+fetch("donnees_concours/departements-grand-est.geojson")
+    .then(response => response.json())
+    .then(data => {
+        L.geoJSON(data, {
+            style: styleDep,
+            onEachFeature: async (feature, layer) => {
+                layer.on('click', async () => {
+                    const codeDep = feature.properties.code.toString();
+                    setLoading(true);
+                    const oiseauxData = await chargerTousLesOiseaux(codeDep);
+                    window.oiseauxData = oiseauxData; // Stocke les données globalement
+                    await chargerCommunesParDep(codeDep);
+                });
+            }
+        }).addTo(map);
+    })
+    .catch(err => console.error("Erreur chargement départements:", err));
 
     </script>
 </body>
