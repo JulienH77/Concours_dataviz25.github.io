@@ -17,7 +17,7 @@ const styleCom = {
     fillOpacity: 0.001
 };
 
-// --- INIT CARTE ---
+// --- INIT CARTE ET ÉLÉMENTS DOM ---
 const map = L.map('map').setView([48.8021, 5.8844], 8);
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
     attribution: '© Esri'
@@ -38,9 +38,23 @@ const deptFiles = {
     "68": "communes_68.geojson",
     "88": "communes_88.geojson"
 };
+const loadingScreen = document.getElementById('loading-screen');
+const popupStats = document.getElementById('popup-stats');
+
+// --- MAPPAGE DES SONS (XENO-CANTO) ---
+const sonsEspeces = {
+    "Merle noir": "https://www.xeno-canto.org/123456/download",
+    // Ajoute ici tes autres espèces manuellement
+};
+
+// --- AFFICHER/MASQUER LE GIF DE CHARGEMENT ---
+function setLoading(isLoading) {
+    loadingScreen.classList.toggle('hidden', !isLoading);
+}
 
 // --- CHARGEMENT DES OISEAUX (TOUTES ANNÉES) ---
 async function chargerTousLesOiseaux(codeDep) {
+    setLoading(true);
     oiseauxData = [];
     const promises = annees.map(annee =>
         fetch(`donnees_concours/oiseaux_${annee}.csv`)
@@ -84,17 +98,18 @@ async function chargerTousLesOiseaux(codeDep) {
 
 // --- CHARGEMENT DES COMMUNES (PAR DÉPARTEMENT) ---
 async function chargerCommunesParDep(codeDep) {
-    if (layerCommunes) map.removeLayer(layerCommunes);
-
     const fileName = deptFiles[codeDep];
     if (!fileName) {
         console.error(`Fichier GeoJSON non trouvé pour le département ${codeDep}`);
+        setLoading(false);
         return;
     }
 
     try {
         const response = await fetch(`donnees_concours/${fileName}`);
         const data = await response.json();
+
+        if (layerCommunes) map.removeLayer(layerCommunes);
 
         layerCommunes = L.geoJSON(data, {
             style: styleCom,
@@ -109,6 +124,8 @@ async function chargerCommunesParDep(codeDep) {
         }).addTo(map);
     } catch (err) {
         console.error(`Erreur chargement communes pour ${codeDep}:`, err);
+    } finally {
+        setLoading(false); // Masque le GIF une fois chargé
     }
 }
 
@@ -126,23 +143,20 @@ function afficherOiseaux(codeCommune, nomCommune) {
         return;
     }
 
-    // Compte le nombre d'observations par espèce
     const especesCount = {};
     oiseauxCommune.forEach(o => {
         const espece = o.espece;
         especesCount[espece] = (especesCount[espece] || 0) + 1;
     });
 
-    // Trie les espèces par nombre d'observations
     const especesTriees = Object.entries(especesCount).sort((a, b) => b[1] - a[1]);
 
-    // Affiche un badge par espèce
     especesTriees.forEach(([espece, count]) => {
         const badge = document.createElement('div');
         badge.className = 'espece-badge';
 
         const img = document.createElement('img');
-        img.src = `photos/${espece.replace(/ /g, '_')}.jpg`; // Chemin vers tes photos
+        img.src = `photos/${espece.replace(/ /g, '_')}.jpg`;
         img.alt = espece;
         img.onerror = () => {
             img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
@@ -156,7 +170,6 @@ function afficherOiseaux(codeCommune, nomCommune) {
         badge.appendChild(countSpan);
         container.appendChild(badge);
 
-        // Ajout du son au clic
         badge.onclick = () => {
             playChant(espece);
             afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune);
@@ -164,20 +177,24 @@ function afficherOiseaux(codeCommune, nomCommune) {
     });
 }
 
-// --- LECTURE DU SON ---
+// --- LECTURE DU SON (XENO-CANTO) ---
 function playChant(espece) {
-    const audio = new Audio(`sons/${espece.replace(/ /g, '_')}.mp3`);
+    const urlSon = sonsEspeces[espece];
+    if (!urlSon) {
+        console.warn(`Aucun son configuré pour ${espece}`);
+        alert(`Le chant de ${espece} n'est pas encore disponible.`);
+        return;
+    }
+
+    const audio = new Audio(urlSon);
     audio.play().catch(e => {
-        console.error(`Erreur lecture son pour ${espece}:`, e);
-        alert(`Le chant de ${espece} n'est pas disponible.`);
+        console.error(`Erreur lecture pour ${espece}:`, e);
+        alert(`Impossible de lire le chant. Vérifie ta connexion.`);
     });
 }
 
-// --- AFFICHAGE DES STATISTIQUES (INCHANGÉ) ---
+// --- AFFICHAGE DES STATISTIQUES (AVEC FERMETURE CORRIGÉE) ---
 function afficherStatsEspece(espece, observations, nomCommune) {
-    const popup = document.getElementById('popup-stats');
-    popup.innerHTML = '';
-
     const stats = {
         nomScientifique: observations[0].nomScientifique,
         nomVernaculaire: observations[0].nomVernaculaire,
@@ -195,7 +212,7 @@ function afficherStatsEspece(espece, observations, nomCommune) {
     });
 
     let content = `
-        <div class="popup-close" onclick="document.getElementById('popup-stats').classList.add('popup-hidden')">×</div>
+        <div class="popup-close" onclick="fermerPopup()">×</div>
         <h2 style="margin-top: 0; color: #5e8c61; font-family: 'Patrick Hand', cursive;">${espece}</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-family: 'Cormorant Garamond', serif;">
             <div>
@@ -220,11 +237,28 @@ function afficherStatsEspece(espece, observations, nomCommune) {
     });
 
     content += `</ul>`;
-    popup.innerHTML = content;
-    popup.classList.remove('popup-hidden');
+    popupStats.innerHTML = content;
+    popupStats.classList.remove('popup-hidden');
+
+    // Fermeture au clic à l'extérieur
+    setTimeout(() => {
+        document.addEventListener('click', fermerPopupSiExterieur);
+    }, 100);
 }
 
-// --- CHARGEMENT DES DÉPARTEMENTS ---
+// --- FERMETURE DE LA POPUP (CORRIGÉE) ---
+function fermerPopup() {
+    popupStats.classList.add('popup-hidden');
+}
+
+function fermerPopupSiExterieur(e) {
+    if (!popupStats.contains(e.target) && !e.target.closest('#especes-container')) {
+        fermerPopup();
+        document.removeEventListener('click', fermerPopupSiExterieur);
+    }
+}
+
+// --- CHARGEMENT DES DÉPARTEMENTS (AVEC GIF) ---
 fetch("donnees_concours/departements-grand-est.geojson")
     .then(r => r.json())
     .then(data => {
@@ -233,9 +267,9 @@ fetch("donnees_concours/departements-grand-est.geojson")
             onEachFeature: (feature, layer) => {
                 layer.on('click', async () => {
                     const codeDep = feature.properties.code.toString();
-                    console.log("Département cliqué:", codeDep);
+                    setLoading(true); // Affiche le GIF
                     await chargerTousLesOiseaux(codeDep);
-                    chargerCommunesParDep(codeDep);
+                    await chargerCommunesParDep(codeDep);
                 });
             }
         }).addTo(map);
