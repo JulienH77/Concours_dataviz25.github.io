@@ -212,7 +212,7 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
             >
             <div class="popup-right">
                 <div class="popup-close" onclick="fermerPopup()">×</div>
-                <h2 style="color: #5e8c61; margin-top: 0;">${espece}</h2>
+                <h2 style="color: #5e8c61; margin-top: 0;">${nomVernaculaire}</h2>
                 <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
                 <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
                 <p><strong>Observations à ${nomCommune}:</strong></p>
@@ -301,5 +301,6 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
+
 
 
