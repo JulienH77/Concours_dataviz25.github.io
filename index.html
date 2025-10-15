@@ -5,27 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/47/47244.png" type="image/png">
     <title>Le Grand-Est chanté</title>
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-    <!-- Polices Google -->
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Patrick+Hand&display=swap" rel="stylesheet">
-    <!-- CSS personnalisé -->
-    <link rel="stylesheet" href="styles.css">
-    <!-- Pré-chargement du GIF -->
     <style>
-        #popup-stats { display: none; }
-        #loading-screen { display: none; }
+        /* CSS minimal pour la popup */
+        .hidden { display: none !important; }
+        #popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+        }
+        #popup-stats {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            width: 80%;
+            max-width: 500px;
+            display: none;
+        }
+        .popup-close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 22px;
+            cursor: pointer;
+            color: #5e8c61;
+        }
     </style>
 </head>
 <body>
     <div id="header">
         <h1>Le Grand-Est chanté</h1>
-        <div class="feuille-decor"></div>
     </div>
     <div id="map"></div>
-    <!-- GIF de chargement -->
-    <div id="loading-screen">
-        <img src="IMG/canard_loading.gif" alt="Chargement...">
+    <div id="loading-screen" class="hidden">
+        <img src="IMG/canard_loading.gif" alt="Chargement..." style="width: 250px; height: 250px; border-radius: 30px;">
     </div>
     <div id="especes-container"></div>
     <!-- Popup et overlay -->
@@ -34,17 +59,9 @@
         <div class="popup-close" onclick="fermerPopup()">×</div>
         <div id="popup-content"></div>
     </div>
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <!-- Script principal -->
-    <script src="script.js"></script>
-    <!-- Pré-chargement du GIF -->
     <script>
-        window.onload = function() {
-            const loadingImg = new Image();
-            loadingImg.src = "IMG/canard_loading.gif";
-        };
+        // Code JavaScript ci-dessous
     </script>
 </body>
 </html>
-
