@@ -43,69 +43,83 @@
             padding: 10px;
             background-color: white;
         }
-        .espece-badge {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid #5e8c61;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-        .espece-badge img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 50%;
-        }
-        .espece-count {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background-color: red;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-        }
-        #popup-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-        #popup-stats {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            z-index: 1001;
-            width: 80%;
-            max-width: 500px;
-        }
-        .popup-close {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            cursor: pointer;
-            font-size: 20px;
-        }
+
+
+/* Ajoute ce CSS à ton fichier styles.css ou dans une balise <style> */
+
+.espece-badge {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #5e8c61;
+    cursor: pointer;
+    position: relative;
+    overflow: visible !important; /* Permet aux exposants de dépasser */
+    margin: 5px;
+}
+
+.espece-badge img {
+    width: 90%;
+    height: 90%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.espece-count {
+    position: absolute;
+    top: -10px !important; /* Déplace l'exposant plus haut */
+    right: -10px !important; /* Déplace l'exposant plus à droite */
+    background-color: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    z-index: 10;
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+
+#popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+#popup-stats {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 1001;
+    width: 80%;
+    max-width: 500px;
+}
+
+.popup-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+}
+
     </style>
 </head>
 <body>
@@ -122,7 +136,7 @@
     </div>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // --- INIT CARTE ---
+// --- INIT CARTE ET ÉLÉMENTS DOM ---
 const map = L.map('map').setView([48.8021, 5.8844], 8);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
@@ -139,10 +153,13 @@ const popupContent = document.getElementById('popup-content');
 const styleDep = { color: "black", weight: 3, opacity: 0.8, fill: true, fillColor: "white", fillOpacity: 0.75 };
 const styleCom = { color: "black", weight: 1, opacity: 0.5, fill: true, fillColor: "white", fillOpacity: 0.001 };
 
-// --- MAPPAGE DES SONS (exemple avec Turdus merula) ---
+// --- MAPPAGE DES SONS ET IFRAMES ---
 const sonsEspeces = {
-    "Turdus merula": "https://www.xeno-canto.org/965521/download" // Merle noir
-    // Ajoute d'autres espèces ici
+    "Turdus merula": {
+        son: "https://xeno-canto.org/1047850/download",
+        iframe: "https://xeno-canto.org/1047850/embed?simple=1"
+    }
+    // Ajoute d'autres espèces ici avec le même format
 };
 
 // --- AFFICHER/MASQUER LE CHARGEMENT ---
@@ -198,7 +215,7 @@ async function chargerTousLesOiseaux(codeDep) {
 
     const results = await Promise.all(promises);
     oiseauxData = results.flat();
-    console.log(`Données chargées: ${oiseauxData.length} observations`);
+    console.log(`Données chargées pour le département ${codeDep}: ${oiseauxData.length} observations`);
     setLoading(false);
     return oiseauxData;
 }
@@ -296,7 +313,7 @@ function afficherOiseaux(codeCommune, nomCommune, oiseauxCommune) {
     });
 }
 
-// --- AFFICHAGE DES STATISTIQUES ---
+// --- AFFICHAGE DES STATISTIQUES (avec iframe) ---
 function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) {
     afficherPopup();
 
@@ -325,21 +342,22 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
 
     content += `</ul>`;
 
-    // Bouton pour écouter le chant (si disponible)
-    if (sonsEspeces[stats.nomScientifique]) {
+    // Ajoute l'iframe si disponible
+    if (sonsEspeces[stats.nomScientifique]?.iframe) {
         content += `
-            <button onclick="playChant('${stats.nomScientifique}')" style="
-                background: #5e8c61;
-                color: white;
-                border: none;
-                padding: 8px 15px;
-                border-radius: 5px;
-                margin-top: 10px;
-                cursor: pointer;
-            ">Écouter le chant</button>
+            <div style="margin-top: 15px; text-align: center;">
+                <iframe
+                    src="${sonsEspeces[stats.nomScientifique].iframe}"
+                    scrolling="no"
+                    frameborder="0"
+                    width="320"
+                    height="100"
+                    style="border-radius: 5px;"
+                ></iframe>
+            </div>
         `;
     } else {
-        content += `<p style="color: #7f8c8d; margin-top: 10px;">Aucun chant disponible.</p>`;
+        content += `<p style="color: #7f8c8d; margin-top: 10px;">Aucun enregistrement disponible.</p>`;
     }
 
     popupContent.innerHTML = content;
@@ -347,13 +365,13 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
 
 // --- LECTURE DU SON ---
 function playChant(nomScientifique) {
-    const url = sonsEspeces[nomScientifique];
-    if (!url) {
+    const sonData = sonsEspeces[nomScientifique];
+    if (!sonData?.son) {
         console.warn(`Aucun son pour ${nomScientifique}`);
         return;
     }
 
-    const audio = new Audio(url);
+    const audio = new Audio(sonData.son);
     audio.play().catch(e => {
         console.error("Erreur de lecture:", e);
         alert("Impossible de lire le chant. Vérifiez votre connexion.");
@@ -381,3 +399,4 @@ fetch("donnees_concours/departements-grand-est.geojson")
     </script>
 </body>
 </html>
+
