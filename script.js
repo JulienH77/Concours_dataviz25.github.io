@@ -1,20 +1,9 @@
-// --- STYLES LEAFLET (couleurs d'origine) ---
+// --- STYLES LEAFLET ---
 const styleDep = {
-    color: "black",
-    weight: 3,
-    opacity: 0.8,
-    fill: true,
-    fillColor: "white",
-    fillOpacity: 0.75
+    color: "black", weight: 3, opacity: 0.8, fill: true, fillColor: "white", fillOpacity: 0.75
 };
-
 const styleCom = {
-    color: "black",
-    weight: 1,
-    opacity: 0.5,
-    fill: true,
-    fillColor: "white",
-    fillOpacity: 0.001
+    color: "black", weight: 1, opacity: 0.5, fill: true, fillColor: "white", fillOpacity: 0.001
 };
 
 // --- INIT CARTE ET ÉLÉMENTS DOM ---
@@ -27,15 +16,9 @@ let layerCommunes = null;
 let oiseauxData = [];
 const annees = [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022];
 const deptFiles = {
-    "08": "communes_08.geojson",
-    "10": "communes_10.geojson",
-    "51": "communes_51.geojson",
-    "52": "communes_52.geojson",
-    "54": "communes_54.geojson",
-    "55": "communes_55.geojson",
-    "57": "communes_57.geojson",
-    "67": "communes_67.geojson",
-    "68": "communes_68.geojson",
+    "08": "communes_08.geojson", "10": "communes_10.geojson", "51": "communes_51.geojson",
+    "52": "communes_52.geojson", "54": "communes_54.geojson", "55": "communes_55.geojson",
+    "57": "communes_57.geojson", "67": "communes_67.geojson", "68": "communes_68.geojson",
     "88": "communes_88.geojson"
 };
 const loadingScreen = document.getElementById('loading-screen');
@@ -44,20 +27,16 @@ const popupStats = document.getElementById('popup-stats');
 const popupContent = document.getElementById('popup-content');
 
 // --- MAPPAGE DES SONS (XENO-CANTO) ---
-// Format: "Nom scientifique": "URL_XenoCanto"
-// Exemple pour Turdus merula (Merle noir)
 const sonsEspeces = {
-    "Turdus merula": "https://www.xeno-canto.org/965521/download",
-    // Ajoute ici d'autres espèces au même format
-    // "Pica pica": "https://www.xeno-canto.org/123456/download",
+    "Turdus merula": "https://xeno-canto.org/1047850/download" // Merle noir
 };
 
 // --- AFFICHER/MASQUER LE GIF DE CHARGEMENT ---
 function setLoading(isLoading) {
-    loadingScreen.style.display = isLoading ? 'flex' : 'none';
+    loadingScreen.classList.toggle('hidden', !isLoading);
 }
 
-// --- CHARGEMENT DES OISEAUX (TOUTES ANNÉES) ---
+// --- CHARGEMENT DES OISEAUX ---
 async function chargerTousLesOiseaux(codeDep) {
     setLoading(true);
     oiseauxData = [];
@@ -95,7 +74,7 @@ async function chargerTousLesOiseaux(codeDep) {
     console.log(`Données chargées pour le département ${codeDep}: ${oiseauxData.length} observations`);
 }
 
-// --- CHARGEMENT DES COMMUNES (PAR DÉPARTEMENT) ---
+// --- CHARGEMENT DES COMMUNES ---
 async function chargerCommunesParDep(codeDep) {
     const fileName = deptFiles[codeDep];
     if (!fileName) {
@@ -152,21 +131,42 @@ function afficherOiseaux(codeCommune, nomCommune) {
     // Trie les espèces par nombre d'observations (DÉCROISSANT)
     const especesTriees = Object.entries(especesCount).sort((a, b) => b[1] - a[1]);
 
-    // Affiche un badge par espèce (dans l'ordre trié)
+    // Affiche un badge par espèce
     especesTriees.forEach(([espece, count]) => {
         const badge = document.createElement('div');
         badge.className = 'espece-badge';
+        badge.style.width = '60px';
+        badge.style.height = '60px';
+        badge.style.borderRadius = '50%';
+        badge.style.backgroundColor = '#f9f9f9';
+        badge.style.border = '2px solid #5e8c61';
+        badge.style.cursor = 'pointer';
+        badge.style.position = 'relative';
+        badge.style.margin = '5px';
 
         const img = document.createElement('img');
-        img.src = `photos/${espece.replace(/ /g, '_')}.jpg`;
+        img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
         img.alt = espece;
-        img.onerror = () => {
-            img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
-        };
+        img.style.width = '90%';
+        img.style.height = '90%';
+        img.style.borderRadius = '50%';
 
         const countSpan = document.createElement('span');
         countSpan.className = 'espece-count';
         countSpan.textContent = count;
+        countSpan.style.position = 'absolute';
+        countSpan.style.top = '-8px';
+        countSpan.style.right = '-8px';
+        countSpan.style.backgroundColor = '#e74c3c';
+        countSpan.style.color = 'white';
+        countSpan.style.borderRadius = '50%';
+        countSpan.style.width = '22px';
+        countSpan.style.height = '22px';
+        countSpan.style.display = 'flex';
+        countSpan.style.alignItems = 'center';
+        countSpan.style.justifyContent = 'center';
+        countSpan.style.fontSize = '11px';
+        countSpan.style.fontWeight = 'bold';
 
         badge.appendChild(img);
         badge.appendChild(countSpan);
@@ -175,12 +175,7 @@ function afficherOiseaux(codeCommune, nomCommune) {
         // Événement pour afficher la popup
         badge.onclick = () => {
             const observation = oiseauxCommune.find(o => o.espece === espece);
-            afficherStatsEspece(
-                espece,
-                oiseauxCommune.filter(o => o.espece === espece),
-                nomCommune,
-                observation.nomScientifique
-            );
+            afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune, observation.nomScientifique);
         };
     });
 }
@@ -194,7 +189,7 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
     // Récupère les infos
     const stats = {
         nomScientifique: nomScientifique,
-        nomVernaculaire: observations[0].nomVernaculaire,
+        nomVernaculaire: observations[0]?.nomVernaculaire || "Inconnu",
         observationsParAnnee: {}
     };
 
@@ -210,12 +205,12 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
         <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
         <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
         <p><strong>Observations à ${nomCommune}:</strong></p>
-        <ul>
+        <ul style="list-style-type: none; padding: 0;">
     `;
 
     // Ajoute les observations par année (triées)
     for (const [annee, count] of Object.entries(stats.observationsParAnnee).sort()) {
-        content += `<li>${annee}: ${count} observation(s)</li>`;
+        content += `<li>• ${annee}: ${count} observation(s)</li>`;
     }
 
     content += `</ul>`;
@@ -254,11 +249,22 @@ function playChant(nomScientifique) {
         return;
     }
 
-    const audio = new Audio(urlSon);
-    audio.play().catch(e => {
-        console.error("Erreur de lecture:", e);
-        alert(`Impossible de lire le chant. Vérifie ta connexion internet.`);
-    });
+    // Vérifie que l'API Xeno-Canto est accessible
+    fetch(urlSon, { method: 'HEAD' })
+        .then(response => {
+            if (response.ok) {
+                const audio = new Audio(urlSon);
+                audio.play().catch(e => {
+                    console.error("Erreur de lecture:", e);
+                    alert(`Impossible de lire le chant. Vérifie ta connexion.`);
+                });
+            } else {
+                alert(`Le chant n'est pas accessible. L'URL peut être invalide.`);
+            }
+        })
+        .catch(() => {
+            alert(`Impossible de vérifier le chant. Vérifie ta connexion.`);
+        });
 }
 
 // --- FERMETURE DE LA POPUP ---
