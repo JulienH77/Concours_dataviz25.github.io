@@ -1,53 +1,46 @@
-/* styles.css - nettoyé et cohérent */
-body {
-    margin: 0;
-    padding: 0;
-    font-family: 'Cormorant Garamond', serif;
-    background-color: #f9f7f3;
-}
-h1 {
-    text-align: center;
-    font-family: 'Patrick Hand', cursive;
-    color: #5e8c61;
-    margin: 16px 0;
-}
-#map {
-    width: 100%;
-    height: 70vh;
-}
 
-/* Loading */
-#loading-screen {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.45);
-    justify-content: center;
-    align-items: center;
-    z-index: 1200;
-}
-#loading-screen img {
-    width: 160px;
-    height: 160px;
-    border-radius: 18px;
-}
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Cormorant Garamond', serif;
+            background-color: #f9f7f3;
+        }
+        h1 {text-align: center;
+            font-family: 'Patrick Hand',
+            cursive; color: #5e8c61;
+        }
+        #map {
+            width: 100%;
+            height: 70vh;
+        }
+        #loading-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #loading-screen img {
+            width: 200px;
+            height: 200px;
+            border-radius: 30px;
+        }
+        #especes-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px;
+            background-color: white;
+        }
 
-/* container espèces (badges) */
-#especes-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    padding: 10px;
-    background-color: white;
-    border-top: 1px solid #eee;
-    min-height: 72px;
-}
 
-/* badge */
+/* Ajoute ce CSS à ton fichier styles.css ou dans une balise <style> */
 .espece-badge {
     width: 60px;
     height: 60px;
@@ -59,19 +52,21 @@ h1 {
     border: 2px solid #5e8c61;
     cursor: pointer;
     position: relative;
-    overflow: visible;
+    overflow: visible !important; /* Permet aux exposants de dépasser */
     margin: 5px;
 }
+
 .espece-badge img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     border-radius: 50%;
 }
+
 .espece-count {
     position: absolute;
-    top: -10px;
-    right: -10px;
+    top: -10px !important; /* Déplace l'exposant plus haut */
+    right: -10px !important; /* Déplace l'exposant plus à droite */
     background-color: #e74c3c;
     color: white;
     border-radius: 50%;
@@ -86,82 +81,62 @@ h1 {
     box-shadow: 0 0 5px rgba(0,0,0,0.3);
 }
 
-/* popup overlay + boite */
+
 #popup-overlay {
     display: none;
     position: fixed;
-    inset: 0;
-    background-color: rgba(0,0,0,0.5);
-    z-index: 1300;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
 }
+/* Remplace le CSS existant de la popup par ceci */
 #popup-stats {
-    display: none; /* MUST be none by default */
+    display: none;
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%,-50%);
-    background-color: #fff;
-    padding: 18px;
-    border-radius: 12px;
-    z-index: 1301;
-    width: 92%;
-    max-width: 900px;
-    max-height: 85vh;
-    overflow: auto;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-    font-family: 'Cormorant Garamond', serif;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 15px;
+    z-index: 1001;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    overflow: hidden;
 }
 
-/* popup image */
+#popup-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
 .popup-image {
-    width: 100%;
-    height: auto;
-    border-radius: 8px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
     object-fit: cover;
-    display: block;
+    border: 3px solid #5e8c61;
+    flex-shrink: 0;
 }
 
-/* popup right column */
-.popup-right {
-    padding-left: 12px;
-}
-
-/* close button */
 .popup-close {
     position: absolute;
     top: 10px;
-    right: 12px;
+    right: 10px;
     cursor: pointer;
     font-size: 24px;
     color: #5e8c61;
 }
 
-/* Leaflet popup champêtre (pour les communes) */
-.leaflet-popup-content-wrapper.popup-champetre {
-    background-color: #f5f0e6 !important;
-    border: 2px solid #8b6f47 !important;
-    border-radius: 12px !important;
-    box-shadow: 0 0 10px rgba(139,111,71,0.35);
-    font-family: 'Patrick Hand', cursive;
-    color: #3b3b3b;
-    padding: 10px !important;
-}
-.leaflet-popup-content-wrapper.popup-champetre h3 {
-    margin: 0 0 6px 0;
-    color: #5e8c61;
-}
-.leaflet-popup-content-wrapper.popup-champetre ul {
-    margin: 6px 0 0 18px;
+.popup-right {
+    flex: 1;
+    padding-left: 10px;
 }
 
-/* responsive: colonne image + content */
-@media (min-width: 680px) {
-    #popup-content > div { display:flex; gap:20px; align-items:flex-start; }
-    #popup-content .left-col { flex: 0 0 260px; }
-    #popup-content .right-col { flex: 1; position: relative; }
-}
-@media (max-width: 679px) {
-    #popup-content > div { display:block; }
-    #popup-content .left-col { width:100%; }
-    #popup-content .right-col { width:100%; margin-top:12px; }
-}

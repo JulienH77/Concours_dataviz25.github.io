@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/47/47244.png" type="image/png">
     <title>Le Grand-Est chanté</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
@@ -12,20 +12,22 @@
 <body>
     <h1>Le Grand-Est chanté</h1>
     <div id="map"></div>
-
-    <div id="loading-screen" aria-hidden="true">
+    <div id="loading-screen">
         <img src="IMG/canard_loading.gif" alt="Chargement...">
     </div>
-
-    <div id="especes-container" aria-live="polite"></div>
-
-    <!-- Overlay + popup custom -->
-    <div id="popup-overlay" onclick="fermerPopup()"></div>
-    <div id="popup-stats" role="dialog" aria-modal="true" aria-hidden="true">
+    <div id="especes-container"></div>
+    <div id="popup-overlay"></div>
+    <div id="popup-stats">
+        <span class="popup-close" onclick="fermerPopup()">×</span>
         <div id="popup-content"></div>
     </div>
-
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
+
+
+
+
+
+
