@@ -2,12 +2,19 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/47/47244.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Le Grand-Est chanté</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <!-- Polices Google -->
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Patrick+Hand&display=swap" rel="stylesheet">
+    <!-- Ton CSS -->
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* CSS critique en ligne pour éviter les problèmes de chargement */
+        body { margin: 0; padding: 0; font-family: 'Cormorant Garamond', serif; }
+        #popup-stats { display: none !important; } /* Masque la popup au chargement */
+    </style>
 </head>
 <body>
     <div id="header">
@@ -16,13 +23,15 @@
     </div>
     <div id="map"></div>
     <!-- GIF de chargement (masqué par défaut) -->
-    <div id="loading-screen" class="hidden">
-        <img src="IMG/canard_loading.gif" alt="Chargement en cours...">
+    <div id="loading-screen" style="display: none;">
+        <img src="IMG/canard_loading.gif" alt="Chargement...">
     </div>
     <div id="especes-container"></div>
     <!-- Popup masquée par défaut -->
     <div id="popup-stats" class="popup-hidden"></div>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Ton script -->
     <script src="script.js"></script>
 </body>
 </html>
