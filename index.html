@@ -8,8 +8,16 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond&family=Patrick+Hand&display=swap" rel="stylesheet">
     <style>
-        body { margin: 0; padding: 0; font-family: 'Cormorant Garamond', serif; background-color: #f9f7f3; }
-        #map { width: 100%; height: 70vh; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Cormorant Garamond', serif;
+            background-color: #f9f7f3;
+        }
+        #map {
+            width: 100%;
+            height: 70vh;
+        }
         #loading-screen {
             display: none;
             position: fixed;
@@ -22,7 +30,11 @@
             align-items: center;
             z-index: 1000;
         }
-        #loading-screen img { width: 200px; height: 200px; border-radius: 30px; }
+        #loading-screen img {
+            width: 200px;
+            height: 200px;
+            border-radius: 30px;
+        }
         #especes-container {
             display: flex;
             flex-wrap: wrap;
@@ -42,6 +54,13 @@
             border: 2px solid #5e8c61;
             cursor: pointer;
             position: relative;
+            overflow: hidden;
+        }
+        .espece-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
         }
         .espece-count {
             position: absolute;
@@ -57,6 +76,36 @@
             justify-content: center;
             font-size: 10px;
         }
+        #popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        #popup-stats {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1001;
+            width: 80%;
+            max-width: 500px;
+        }
+        .popup-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 20px;
+        }
     </style>
 </head>
 <body>
@@ -66,9 +115,14 @@
         <img src="IMG/canard_loading.gif" alt="Chargement...">
     </div>
     <div id="especes-container"></div>
+    <div id="popup-overlay"></div>
+    <div id="popup-stats">
+        <span class="popup-close" onclick="fermerPopup()">×</span>
+        <div id="popup-content"></div>
+    </div>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-       // --- INIT CARTE ---
+        // --- INIT CARTE ---
 const map = L.map('map').setView([48.8021, 5.8844], 8);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
@@ -77,6 +131,9 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // Éléments DOM
 const loadingScreen = document.getElementById('loading-screen');
 const especesContainer = document.getElementById('especes-container');
+const popupOverlay = document.getElementById('popup-overlay');
+const popupStats = document.getElementById('popup-stats');
+const popupContent = document.getElementById('popup-content');
 
 // --- STYLES LEAFLET ---
 const styleDep = { color: "black", weight: 3, opacity: 0.8, fill: true, fillColor: "white", fillOpacity: 0.75 };
@@ -85,6 +142,7 @@ const styleCom = { color: "black", weight: 1, opacity: 0.5, fill: true, fillColo
 // --- MAPPAGE DES SONS (exemple avec Turdus merula) ---
 const sonsEspeces = {
     "Turdus merula": "https://www.xeno-canto.org/965521/download" // Merle noir
+    // Ajoute d'autres espèces ici
 };
 
 // --- AFFICHER/MASQUER LE CHARGEMENT ---
@@ -92,7 +150,18 @@ function setLoading(show) {
     loadingScreen.style.display = show ? 'flex' : 'none';
 }
 
-// --- CHARGEMENT DES OISEAUX (TOUTES ANNÉES) ---
+// --- AFFICHER/MASQUER LA POPUP ---
+function afficherPopup() {
+    popupOverlay.style.display = 'block';
+    popupStats.style.display = 'block';
+}
+
+function fermerPopup() {
+    popupOverlay.style.display = 'none';
+    popupStats.style.display = 'none';
+}
+
+// --- CHARGEMENT DES OISEAUX ---
 async function chargerTousLesOiseaux(codeDep) {
     setLoading(true);
     let oiseauxData = [];
@@ -134,7 +203,7 @@ async function chargerTousLesOiseaux(codeDep) {
     return oiseauxData;
 }
 
-// --- CHARGEMENT DES COMMUNES (PAR DÉPARTEMENT) ---
+// --- CHARGEMENT DES COMMUNES ---
 async function chargerCommunesParDep(codeDep) {
     const deptFiles = {
         "08": "communes_08.geojson", "10": "communes_10.geojson", "51": "communes_51.geojson",
@@ -160,9 +229,9 @@ async function chargerCommunesParDep(codeDep) {
             onEachFeature: (feature, layer) => {
                 layer.on('click', async () => {
                     const codeCommune = feature.properties.code.padStart(5, '0');
-                    const oiseauxCommune = oiseauxData.filter(o => o.codeinseecommune === codeCommune);
+                    const oiseauxCommune = window.oiseauxData.filter(o => o.codeinseecommune === codeCommune);
 
-                    // Joue le son si des oiseaux sont présents
+                    // Joue le son si des oiseaux avec chant sont présents
                     if (oiseauxCommune.length > 0) {
                         const especeAvecSon = oiseauxCommune.find(o => sonsEspeces[o.nomScientifique]);
                         if (especeAvecSon) {
@@ -198,16 +267,82 @@ function afficherOiseaux(codeCommune, nomCommune, oiseauxCommune) {
     // Trie les espèces par nombre d'observations (décroissant)
     const especesTriees = Object.entries(especesCount).sort((a, b) => b[1] - a[1]);
 
-    // Affiche tous les badges
+    // Affiche tous les badges avec images
     especesTriees.forEach(([espece, count]) => {
         const badge = document.createElement('div');
         badge.className = 'espece-badge';
-        badge.innerHTML = `
-            <img src="https://via.placeholder.com/60?text=${espece.charAt(0)}" alt="${espece}" style="width: 90%; height: 90%; border-radius: 50%;">
-            <span class="espece-count">${count}</span>
-        `;
+
+        // Image avec fallback
+        const img = document.createElement('img');
+        img.src = `photos/${espece.replace(/ /g, '_')}.jpg`;
+        img.alt = espece;
+        img.onerror = () => {
+            img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
+        };
+
+        const countSpan = document.createElement('span');
+        countSpan.className = 'espece-count';
+        countSpan.textContent = count;
+
+        badge.appendChild(img);
+        badge.appendChild(countSpan);
         especesContainer.appendChild(badge);
+
+        // Événement pour afficher la popup
+        badge.onclick = () => {
+            const observation = oiseauxCommune.find(o => o.espece === espece);
+            afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune, observation.nomScientifique);
+        };
     });
+}
+
+// --- AFFICHAGE DES STATISTIQUES ---
+function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) {
+    afficherPopup();
+
+    const stats = {
+        nomScientifique: nomScientifique,
+        nomVernaculaire: observations[0]?.nomVernaculaire || "Inconnu",
+        observationsParAnnee: {}
+    };
+
+    observations.forEach(o => {
+        const annee = o.annee;
+        stats.observationsParAnnee[annee] = (stats.observationsParAnnee[annee] || 0) + 1;
+    });
+
+    let content = `
+        <h2>${espece}</h2>
+        <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
+        <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
+        <p><strong>Observations à ${nomCommune}:</strong></p>
+        <ul>
+    `;
+
+    for (const [annee, count] of Object.entries(stats.observationsParAnnee).sort()) {
+        content += `<li>${annee}: ${count} observation(s)</li>`;
+    }
+
+    content += `</ul>`;
+
+    // Bouton pour écouter le chant (si disponible)
+    if (sonsEspeces[stats.nomScientifique]) {
+        content += `
+            <button onclick="playChant('${stats.nomScientifique}')" style="
+                background: #5e8c61;
+                color: white;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 5px;
+                margin-top: 10px;
+                cursor: pointer;
+            ">Écouter le chant</button>
+        `;
+    } else {
+        content += `<p style="color: #7f8c8d; margin-top: 10px;">Aucun chant disponible.</p>`;
+    }
+
+    popupContent.innerHTML = content;
 }
 
 // --- LECTURE DU SON ---
@@ -221,6 +356,7 @@ function playChant(nomScientifique) {
     const audio = new Audio(url);
     audio.play().catch(e => {
         console.error("Erreur de lecture:", e);
+        alert("Impossible de lire le chant. Vérifiez votre connexion.");
     });
 }
 
@@ -234,8 +370,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
                 layer.on('click', async () => {
                     const codeDep = feature.properties.code.toString();
                     setLoading(true);
-                    const oiseauxData = await chargerTousLesOiseaux(codeDep);
-                    window.oiseauxData = oiseauxData; // Stocke les données globalement
+                    window.oiseauxData = await chargerTousLesOiseaux(codeDep);
                     await chargerCommunesParDep(codeDep);
                 });
             }
