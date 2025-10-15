@@ -1,162 +1,46 @@
-/* Reset et base */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    font-family: 'Cormorant Garamond', serif;
-    background-color: #f9f7f3;
-    color: #3a3a3a;
-    overflow-x: hidden;
-}
-
-#header {
-    text-align: center;
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 15px;
-    margin-bottom: 10px;
-    border-radius: 0 0 15px 15px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    position: relative;
-}
-
-h1 {
-    font-family: 'Patrick Hand', cursive;
-    font-size: 2.5em;
-    color: #5e8c61;
-    margin: 0;
-}
-
-.feuille-decor {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 20px;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="20" viewBox="0 0 100 20"><path d="M10,10 Q15,5 20,10 Q25,15 30,10 Q35,5 40,10 Q45,15 50,10 Q55,5 60,10 Q65,15 70,10 Q75,5 80,10 Q85,15 90,10" stroke="%235e8c61" stroke-width="1.5" fill="none"/></svg>');
-    background-repeat: repeat-x;
-    opacity: 0.3;
-}
-
-/* Carte */
-#map {
-    width: 100%;
-    height: 70vh;
-    margin: 0 auto;
-    border-radius: 10px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-}
-
-/* GIF de chargement (fluide) */
-#loading-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-#loading-screen img {
-    width: 250px;
-    height: 250px;
-    border-radius: 30px;
-    image-rendering: -moz-crisp-edges;
-    image-rendering: -webkit-crisp-edges;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-}
-
-/* Conteneur des espèces */
-#especes-container {
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 12px;
-    padding: 15px;
-    background-color: rgba(255, 255, 255, 0.8);
-    margin: 10px auto;
-    border-radius: 10px;
-}
-
-/* Badges d'espèces */
-.espece-badge {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background-color: #f9f9f9;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid #5e8c61;
-    cursor: pointer;
-    position: relative;
-    overflow: visible;
-}
-
-.espece-badge img {
-    width: 90%;
-    height: 90%;
-    object-fit: cover;
-    border-radius: 50%;
-}
-
-.espece-count {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background-color: #e74c3c;
-    color: white;
-    border-radius: 50%;
-    width: 22px;
-    height: 22px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: bold;
-    z-index: 10;
-}
-
-/* Popup */
-#popup-stats {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    z-index: 1001;
-    max-width: 90%;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.3);
-    z-index: 1000;
-    display: none;
-}
-
-.popup-close {
-    position: absolute;
-    top: 10px;
-    right: 15px;
-    font-size: 22px;
-    cursor: pointer;
-    color: #5e8c61;
-}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/47/47244.png" type="image/png">
+    <title>Le Grand-Est chanté</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <!-- Polices Google -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500&family=Patrick+Hand&display=swap" rel="stylesheet">
+    <!-- CSS personnalisé -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Pré-chargement du GIF -->
+    <style>
+        #popup-stats { display: none; }
+        #loading-screen { display: none; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>Le Grand-Est chanté</h1>
+        <div class="feuille-decor"></div>
+    </div>
+    <div id="map"></div>
+    <!-- GIF de chargement -->
+    <div id="loading-screen">
+        <img src="IMG/canard_loading.gif" alt="Chargement...">
+    </div>
+    <div id="especes-container"></div>
+    <!-- Popup et overlay -->
+    <div id="popup-overlay" class="hidden"></div>
+    <div id="popup-stats" class="hidden"></div>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Script principal -->
+    <script src="script.js"></script>
+    <!-- Pré-chargement du GIF -->
+    <script>
+        window.onload = function() {
+            const loadingImg = new Image();
+            loadingImg.src = "IMG/canard_loading.gif";
+        };
+    </script>
+</body>
+</html>
