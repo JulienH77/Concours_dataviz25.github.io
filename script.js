@@ -199,24 +199,43 @@ function afficherOiseaux(codeCommune, nomCommune, oiseauxCommune) {
 function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) {
     afficherPopup();
 
-    // Sécurité : récupère la 1ère observation si elle existe
-    const firstObs = observations && observations.length > 0 ? observations[0] : {};
+    if (!observations || observations.length === 0) {
+        popupContent.innerHTML = "<p>Aucune donnée disponible pour cette espèce.</p>";
+        return;
+    }
 
+    // --- Récupération des infos de base ---
+    const firstObs = observations[0];
     const stats = {
         nomScientifique: nomScientifique || firstObs.nomScientifique || "",
         nomVernaculaire: firstObs.nomVernaculaire || "Inconnu",
-        observationsParAnnee: {},
-        // récupère les booléens (fallback à false si undefined)
-        especeEvalueeLR: !!firstObs.especeEvalueeLR,
-        especeReglementee: !!firstObs.especeReglementee
+        observationsParAnnee: {}
     };
 
+    // --- Calcul des observations par année ---
     observations.forEach(o => {
         const annee = o.annee;
         stats.observationsParAnnee[annee] = (stats.observationsParAnnee[annee] || 0) + 1;
     });
 
-    // Crée le contenu avec photo + infos en format paysage
+    // --- Détermination de la première année "true" pour chaque statut ---
+    let premiereAnneeLR = null;
+    let premiereAnneeReglementee = null;
+
+    observations.forEach(o => {
+        if (o.especeEvalueeLR && !premiereAnneeLR) premiereAnneeLR = o.annee;
+        if (o.especeReglementee && !premiereAnneeReglementee) premiereAnneeReglementee = o.annee;
+    });
+
+    // --- Texte pour affichage ---
+    const texteLR = premiereAnneeLR
+        ? `Oui (${premiereAnneeLR})`
+        : `Non`;
+    const texteReglementee = premiereAnneeReglementee
+        ? `⚠️ Oui (depuis ${premiereAnneeReglementee})`
+        : `Non`;
+
+    // --- Construction du contenu HTML ---
     let content = `
         <div style="display: flex; gap: 20px; width: 100%;">
             <img
@@ -229,16 +248,14 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
                 <div class="popup-close" onclick="fermerPopup()">×</div>
                 <h2 style="color: #5e8c61; margin-top: 0;">${stats.nomVernaculaire}</h2>
                 <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
-                <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
+                <p><strong>Espèce Liste Rouge :</strong> ${texteLR}</p>
+                <p><strong>Espèce réglementée :</strong> ${texteReglementee}</p>
 
-                <p><strong>Espèce Liste Rouge :</strong> ${stats.especeEvalueeLR ? "✅ Oui" : "❌ Non"}</p>
-                <p><strong>Espèce réglementée :</strong> ${stats.especeReglementee ? "⚠️ Oui" : "Non"}</p>
-
-                <p><strong>Observations à ${nomCommune}:</strong></p>
+                <p><strong>Observations à ${nomCommune} :</strong></p>
                 <ul style="list-style-type: none; padding: 0;">
     `;
 
-    // tri par année croissante
+    // --- Tri et affichage des observations ---
     const anneesTriees = Object.keys(stats.observationsParAnnee).sort();
     for (const annee of anneesTriees) {
         const count = stats.observationsParAnnee[annee];
@@ -247,7 +264,7 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
 
     content += `</ul>`;
 
-    // Ajoute l'iframe SI un enregistrement existe
+    // --- Ajout de l'iframe si disponible ---
     if (sonsEspeces[stats.nomScientifique]?.iframe) {
         content += `
             <div style="margin-top: 15px; text-align: center;">
@@ -268,11 +285,12 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
     content += `</div></div>`;
     popupContent.innerHTML = content;
 
-    // Précharge le son si disponible
+    // Précharge le son si dispo
     if (sonsEspeces[stats.nomScientifique]?.son) {
         preloadAudio(sonsEspeces[stats.nomScientifique].son);
     }
 }
+
 
         
 // --- PRÉCHARGEMENT DES SONS (nouvelle fonction) ---
@@ -323,6 +341,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
+
 
 
 
