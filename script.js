@@ -47,53 +47,62 @@ function fermerPopup() {
 }
 
 // --- CHARGEMENT DES OISEAUX ---
-async function chargerTousLesOiseaux(codeDep) {
-    setLoading(true);
-    let oiseauxData = [];
-    const annees = [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022];
+function chargerTousLesOiseaux() {
+    const fichiers = [
+        "oiseaux_2012.csv",
+        "oiseaux_2013.csv",
+        "oiseaux_2014.csv",
+        "oiseaux_2015.csv",
+        "oiseaux_2016.csv",
+        "oiseaux_2017.csv",
+        "oiseaux_2018.csv",
+        "oiseaux_2019.csv",
+        "oiseaux_2020.csv",
+        "oiseaux_2021.csv",
+        "oiseaux_2022.csv",
+        "oiseaux_2023.csv",
+        "oiseaux_2024.csv"
+    ];
 
-    const promises = annees.map(annee =>
-        fetch(`donnees_concours/oiseaux_${annee}.csv`)
-            .then(r => r.text())
-            .then(txt => {
-                const lignes = txt.split('\n').slice(1);
-                return lignes.map(l => {
-                    if (!l.trim()) return null; // Ignore les lignes vides
-                    const cols = l.split(';');
-                    // Vérifie qu’il y a au moins 8 colonnes pour éviter les erreurs
-                    if (cols.length < 8) return null;
+    const promises = fichiers.map(fichier =>
+        fetch(`data/${fichier}`)
+            .then(response => response.text())
+            .then(csvText => {
+                const lignes = csvText.trim().split("\n");
+                const header = lignes[0].split(";");
+                const annee = parseInt(fichier.match(/\d{4}/)[0]);
 
-                    let code = cols[9]?.trim();
-                    if (!code) return null;
+                return lignes.slice(1).map(ligne => {
+                    const cols = ligne.split(";").map(c => c.trim().replace(/^"|"$/g, "")); 
+                    // supprime les guillemets en début/fin de chaque champ
 
-                    code = code.padStart(5, '0');
-
-                    if (code.startsWith(codeDep.padStart(2, '0'))) {
-                        return {
-                            nomScientifique: cols[0]?.trim(),
-                            nomVernaculaire: cols[1]?.trim(),
-                            espece: cols[3]?.trim(),
-                            especeEvalueeLR: cols[5]?.trim()?.toLowerCase() === "true",
-                            especeReglementee: cols[6]?.trim()?.toLowerCase() === "true",
-                            codeinseecommune: code,
-                            annee: annee
-                        };
-                    }
-                    return null;
-                }).filter(Boolean);
-            })
-            .catch(err => {
-                console.error(`Erreur chargement oiseaux ${annee}:`, err);
-                return [];
+                    // Ajuste les indices ci-dessous selon ton CSV
+                    return {
+                        espece: cols[0],
+                        nomScientifique: cols[1],
+                        nomVernaculaire: cols[2],
+                        codeinseecommune: cols[3],
+                        annee: annee,
+                        especeEvalueeLR: normaliserBooleen(cols[4]),
+                        especeReglementee: normaliserBooleen(cols[5])
+                    };
+                });
             })
     );
 
-    const results = await Promise.all(promises);
-    oiseauxData = results.flat();
-    console.log(`Données chargées pour le département ${codeDep}: ${oiseauxData.length} observations`);
-    setLoading(false);
-    return oiseauxData;
+    Promise.all(promises).then(resultats => {
+        oiseauxData = resultats.flat();
+        console.log("Données chargées :", oiseauxData.slice(0, 10));
+        afficherCouchesSurCarte();
+    });
 }
+
+function normaliserBooleen(val) {
+    if (!val) return false;
+    const v = val.toString().trim().toLowerCase().replace(/^"|"$/g, "");
+    return v === "true" || v === "oui" || v === "1" || v === "x";
+}
+
 
 
 // --- CHARGEMENT DES COMMUNES (corrigé) ---
@@ -341,6 +350,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
+
 
 
 
