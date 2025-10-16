@@ -193,7 +193,7 @@ async function chargerTousLesOiseaux(codeDep) {
     const merged = results.flat();
     window.oiseauxData = merged; // global
     windowOiseauxData = merged; // local référence
-    console.log(`✅ Données chargées pour le département ${codeDep}:`, merged.length);
+    console.log(`Données chargées pour le département ${codeDep}:`, merged.length);
 
     setLoading(false);
     return merged;
@@ -411,7 +411,6 @@ fetch("donnees_concours/departements-grand-est.geojson")
         L.geoJSON(data, {
             style: styleDep,
             onEachFeature: async (feature, layer) => {
-            onEachFeature: async (feature, layer) => {
                 layer.on('click', async () => {
                     const codeDep = feature.properties.code.toString();
             
@@ -453,12 +452,12 @@ fetch("donnees_concours/departements-grand-est.geojson")
     await chargerCommunesParDep(codeDep);
     setLoading(false);
                 });
-            }           
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
 
 });
+
 
 
 
