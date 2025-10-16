@@ -101,15 +101,30 @@
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: white;
-    padding: 18px;
+    padding: 16px;
     border-radius: 12px;
     z-index: 1001;
-    width: 92%;
-    max-width: 900px; /* plus large */
-    max-height: 85vh;
+    width: 90%;
+    max-width: 680px; /* <- réduit la largeur max */
+    max-height: 80vh;
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
+
+.popup-close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    font-size: 26px;
+    color: #5e8c61;
+    cursor: pointer;
+    z-index: 2000;
+}
+
+
+
 
 /* Contenu interne: 2 colonnes (gauche photo+iframe / droite texte) */
 #popup-content {
@@ -150,17 +165,6 @@
     flex: 1;
     min-width: 240px;
 }
-/* Colonne droite texte */
-.popup-right {
-    flex: 1;
-    min-width: 240px;
-}
-/* Colonne droite texte */
-.popup-right {
-    flex: 1;
-    min-width: 240px;
-}
-
 
 /* badge espece speaking (effet de bordure "on parle") */
 .espece-badge.speaking {
@@ -208,11 +212,15 @@
 /* assure que le popup leaflet (sur la carte) s'affiche correctement */
 .leaflet-container .leaflet-popup-content-wrapper { font-family: 'Cormorant Garamond', serif; }
 
+.popup-right p { margin: 4px 0; }
+.popup-right ul { margin-top: 2px; }
+
 /* responsive: pour petits écrans on empile */
 @media (max-width: 700px) {
     #popup-content { flex-direction: column; align-items: center; }
     .popup-left { flex: none; }
     .popup-right { width: 100%; }
 }
+
 
 
