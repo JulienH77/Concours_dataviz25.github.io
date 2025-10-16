@@ -106,11 +106,11 @@
     width: 90%;
     max-width: 600px;
     max-height: 80vh;
-    display: flex;
     flex-direction: row;
     gap: 20px;
     overflow: hidden;
 }
+
 
 #popup-content {
     flex: 1;
@@ -139,4 +139,5 @@
     flex: 1;
     padding-left: 10px;
 }
+
 
