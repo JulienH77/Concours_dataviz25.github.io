@@ -344,6 +344,8 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
 
     // construction HTML : left = image + iframe, right = texte/stats
     let content = `
+        <div style="position: relative;">
+        <button class="popup-close" onclick="fermerPopup()">×</button>
         <div id="popup-inner" style="display:flex; gap: 20px; width:100%;">
             <div class="popup-left">
                 <img src="photos/${espece.replace(/ /g, '_').replace(/"/g, '')}.jpg"
@@ -367,13 +369,12 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
     // droite
     content += `
         <div class="popup-right">
-            <div class="popup-close" onclick="fermerPopup()">×</div>
             <h2 style="color: #5e8c61; margin-top: 0;">${observationsCommune[0]?.nomVernaculaire || nomScientifique}</h2>
             <p><strong>Nom scientifique:</strong> ${nomScientifique}</p>
             <!--<p><strong>Espèce Liste Rouge :</strong> ${texteLR}</p>-->
             <!--<p><strong>Espèce réglementée :</strong> ${texteReglementee}</p>-->
 
-            <p style="margin-top:6px;"><strong>Observations à ${nomCommune} :</strong></p>
+            <p style="margin-top:6px; margin-bottom:-10px;"><strong>Observations à ${nomCommune} :</strong></p>
             <ul style="list-style-type:none; padding-left:0;">
     `;
 
@@ -382,7 +383,7 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
         content += `<li>• ${annee}: ${observationsParAnnee[annee]} observation(s)</li>`;
     }
 
-    content += `</ul></div></div>`;
+    content += `</ul></div></div></div></div>`;
     popupContent.innerHTML = content;
 
     // affiche overlay popup
@@ -444,4 +445,5 @@ fetch("donnees_concours/departements-grand-est.geojson")
     .catch(err => console.error("Erreur chargement départements:", err));
 
 });
+
 
