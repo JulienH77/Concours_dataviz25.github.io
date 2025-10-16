@@ -173,25 +173,30 @@
     100% { box-shadow: 0 0 0 0 rgba(94,140,97,0); }
 }
 
-/* bouton son top-right */
 #sound-toggle {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    z-index: 1200;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: 2px solid rgba(0,0,0,0.08);
-    background: white;
-    font-size: 20px;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background-color: white;
+  border: 2px solid #333;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  cursor: pointer;
+  z-index: 1000;
+  transition: background-color 0.3s, transform 0.2s;
 }
+
+#sound-toggle:hover {
+  transform: scale(1.1);
+}
+
+#sound-toggle.disabled {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
 
 /* état désactivé (barré en diagonale) */
 #sound-toggle.off {
@@ -212,3 +217,4 @@
     .popup-left { flex: none; }
     .popup-right { width: 100%; }
 }
+
