@@ -58,21 +58,26 @@ async function chargerTousLesOiseaux(codeDep) {
             .then(txt => {
                 const lignes = txt.split('\n').slice(1);
                 return lignes.map(l => {
+                    if (!l.trim()) return null; // Ignore les lignes vides
                     const cols = l.split(';');
-                    if (cols.length < 10) return null;
+                    // Vérifie qu’il y a au moins 8 colonnes pour éviter les erreurs
+                    if (cols.length < 8) return null;
+
                     let code = cols[9]?.trim();
                     if (!code) return null;
+
                     code = code.padStart(5, '0');
+
                     if (code.startsWith(codeDep.padStart(2, '0'))) {
-                    return {
-                        nomScientifique: cols[0]?.trim(),
-                        nomVernaculaire: cols[1]?.trim(),
-                        espece: cols[3]?.trim(),
-                        especeEvalueeLR: cols[5]?.trim().toLowerCase() === "true",
-                        especeReglementee: cols[6]?.trim().toLowerCase() === "true",
-                        codeinseecommune: code,
-                        annee: annee
-                    };
+                        return {
+                            nomScientifique: cols[0]?.trim(),
+                            nomVernaculaire: cols[1]?.trim(),
+                            espece: cols[3]?.trim(),
+                            especeEvalueeLR: cols[5]?.trim()?.toLowerCase() === "true",
+                            especeReglementee: cols[6]?.trim()?.toLowerCase() === "true",
+                            codeinseecommune: code,
+                            annee: annee
+                        };
                     }
                     return null;
                 }).filter(Boolean);
@@ -89,6 +94,7 @@ async function chargerTousLesOiseaux(codeDep) {
     setLoading(false);
     return oiseauxData;
 }
+
 
 // --- CHARGEMENT DES COMMUNES (corrigé) ---
 async function chargerCommunesParDep(codeDep) {
@@ -306,6 +312,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
+
 
 
 
