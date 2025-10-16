@@ -36,8 +36,8 @@ function setLoading(show) {
 
 // --- AFFICHER/MASQUER LA POPUP ---
 function afficherPopup() {
-    popupOverlay.style.display = 'none';
-    popupStats.style.display = 'none';
+    popupOverlay.style.display = 'block';
+    popupStats.style.display = 'block';
 }
 
 function fermerPopup() {
@@ -302,6 +302,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
+
 
 
 
