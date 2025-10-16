@@ -416,7 +416,6 @@ fetch("donnees_concours/departements-grand-est.geojson")
                     // reset zone des ronds d'espèces dès qu'on change de département
                     especesContainer.innerHTML = '';
                     setLoading(true);
-                    await chargerTousLesOiseaux(codeDep);
                     await chargerCommunesParDep(codeDep);
                     setLoading(false);
                     
@@ -445,5 +444,6 @@ fetch("donnees_concours/departements-grand-est.geojson")
     .catch(err => console.error("Erreur chargement départements:", err));
 
 });
+
 
 
