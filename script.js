@@ -413,36 +413,33 @@ fetch("donnees_concours/departements-grand-est.geojson")
 onEachFeature: async (feature, layer) => {
     layer.on('click', async () => {
         const codeDep = feature.properties.code.toString();
-        // reset zone des ronds d'espèces dès qu'on change de département
-        especesContainer.innerHTML = '';
-        setLoading(true);
-        await chargerTousLesOiseaux(codeDep);
-        await chargerCommunesParDep(codeDep);
-        setLoading(false);
-                    
+
         // --- STOPPE le son en cours et retire les highlights ---
         if (window.currentAudio && !window.currentAudio.paused) {
             try {
                 window.currentAudio.pause();
                 window.currentAudio.currentTime = 0;
-            } catch (e) { console.warn("Impossible d'arrêter l'audio :", e); }
+            } catch (e) {
+                console.warn("Impossible d'arrêter l'audio :", e);
+            }
         }
         document.querySelectorAll('.espece-badge.speaking').forEach(b => b.classList.remove('speaking'));
-
         especesContainer.innerHTML = '';
 
-        // puis lance le chargement du département
+        // --- CHARGE LES DONNÉES DU DÉPARTEMENT ---
         setLoading(true);
         await chargerTousLesOiseaux(codeDep);
         await chargerCommunesParDep(codeDep);
         setLoading(false);
     });
-}})
+}
+})
 }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
 
 });
+
 
 
 
