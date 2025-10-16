@@ -63,10 +63,10 @@
     border-radius: 50%;
 }
 
-.espece-count {
+/*.espece-count {
     position: absolute;
-    top: -10px !important; /* Déplace l'exposant plus haut */
-    right: -10px !important; /* Déplace l'exposant plus à droite */
+    top: -10px !important; 
+    right: -10px !important;
     background-color: #e74c3c;
     color: white;
     border-radius: 50%;
@@ -79,9 +79,10 @@
     font-weight: bold;
     z-index: 10;
     box-shadow: 0 0 5px rgba(0,0,0,0.3);
-}
+}*/
 
 
+/* --- Popup overlay / popup stats (corrections) --- */
 #popup-overlay {
     display: none;
     position: fixed;
@@ -89,10 +90,10 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.45);
     z-index: 1000;
 }
-/* Remplace le CSS existant de la popup par ceci */
+/* Popup principale (overlay custom) */
 #popup-stats {
     display: none;
     position: fixed;
@@ -100,44 +101,114 @@
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: white;
-    padding: 20px;
-    border-radius: 15px;
+    padding: 18px;
+    border-radius: 12px;
     z-index: 1001;
-    width: 90%;
-    max-width: 600px;
-    max-height: 80vh;
-    flex-direction: row;
-    gap: 20px;
+    width: 92%;
+    max-width: 900px; /* plus large */
+    max-height: 85vh;
     overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
 
-
+/* Contenu interne: 2 colonnes (gauche photo+iframe / droite texte) */
 #popup-content {
-    flex: 1;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
     overflow-y: auto;
+    padding-right: 6px;
 }
 
+/* Colonne gauche : image puis iframe dessous */
+.popup-left {
+    flex: 0 0 240px; /* fixe largeur image + iframe */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+/* image */
 .popup-image {
-    width: 200px;
-    height: 200px;
+    width: 220px;
+    height: 220px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #5e8c61;
-    flex-shrink: 0;
+    border: 4px solid #5e8c61;
 }
-
-.popup-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    cursor: pointer;
-    font-size: 24px;
-    color: #5e8c61;
+/* iframe de même largeur que l'image, sous l'image */
+.popup-iframe {
+    width: 220px;
+    height: 100px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.1);
 }
-
+/* Colonne droite texte */
 .popup-right {
     flex: 1;
-    padding-left: 10px;
+    min-width: 240px;
+}
+/* Colonne droite texte */
+.popup-right {
+    flex: 1;
+    min-width: 240px;
+}
+/* Colonne droite texte */
+.popup-right {
+    flex: 1;
+    min-width: 240px;
 }
 
 
+/* badge espece speaking (effet de bordure "on parle") */
+.espece-badge.speaking {
+    animation: pulseBorder 1s infinite;
+    box-shadow: 0 0 12px rgba(94,140,97,0.6);
+}
+@keyframes pulseBorder {
+    0% { box-shadow: 0 0 0 0 rgba(94,140,97,0.8); }
+    50% { box-shadow: 0 0 0 10px rgba(94,140,97,0); }
+    100% { box-shadow: 0 0 0 0 rgba(94,140,97,0); }
+}
+
+/* bouton son top-right */
+#sound-toggle {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1200;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 2px solid rgba(0,0,0,0.08);
+    background: white;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+/* état désactivé (barré en diagonale) */
+#sound-toggle.off {
+    background: linear-gradient(135deg, rgba(255,255,255,1) 0 49%, rgba(220,220,220,1) 50% 100%);
+    color: #999;
+    position: fixed;
+}
+
+/* petit style pour l'exposant du badge */
+.espece-count { font-size: 11px; }
+
+/* assure que le popup leaflet (sur la carte) s'affiche correctement */
+.leaflet-container .leaflet-popup-content-wrapper { font-family: 'Cormorant Garamond', serif; }
+
+/* responsive: pour petits écrans on empile */
+@media (max-width: 700px) {
+    #popup-content { flex-direction: column; align-items: center; }
+    .popup-left { flex: none; }
+    .popup-right { width: 100%; }
+}
