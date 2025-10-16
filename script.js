@@ -20,6 +20,19 @@ window.soundAuto = true; // par défaut lecture auto lors du clic commune
 const styleDep = { color: "black", weight: 3, opacity: 0.8, fill: true, fillColor: "white", fillOpacity: 0.75 };
 const styleCom = { color: "black", weight: 1, opacity: 0.5, fill: true, fillColor: "white", fillOpacity: 0.001 };
 
+
+
+
+
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+
+
+
+
+
 // --- sons mapping (garde le tien) ---
 const sonsEspeces = {
     "Turdus merula": {
@@ -399,3 +412,5 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
+
+});
