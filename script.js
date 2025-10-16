@@ -439,3 +439,4 @@ fetch("donnees_concours/departements-grand-est.geojson")
     })
     .catch(err => console.error("Erreur chargement départements:", err));
 
+});
