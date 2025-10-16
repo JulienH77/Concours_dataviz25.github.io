@@ -36,8 +36,8 @@ function setLoading(show) {
 
 // --- AFFICHER/MASQUER LA POPUP ---
 function afficherPopup() {
-    popupOverlay.style.display = 'block';
-    popupStats.style.display = 'block';
+    popupOverlay.style.display = 'none';
+    popupStats.style.display = 'none';
 }
 
 function fermerPopup() {
@@ -214,7 +214,8 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
                 <div class="popup-close" onclick="fermerPopup()">×</div>
                 <h2 style="color: #5e8c61; margin-top: 0;">${stats.nomVernaculaire}</h2>
                 <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
-                <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
+                <p>Espèce Liste Rouge : {especeEvalueeLR}</p>
+                <p>Espèce Réglementée : {especeReglementee}</p>
                 <p><strong>Observations à ${nomCommune}:</strong></p>
                 <ul style="list-style-type: none; padding: 0;">
     `;
