@@ -36,9 +36,10 @@ function setLoading(show) {
 
 // --- AFFICHER/MASQUER LA POPUP ---
 function afficherPopup() {
-    popupOverlay.style.display = 'none';
-    popupStats.style.display = 'none';
+    popupOverlay.style.display = 'block';
+    popupStats.style.display = 'flex';
 }
+
 
 function fermerPopup() {
     popupOverlay.style.display = 'none';
@@ -63,13 +64,15 @@ async function chargerTousLesOiseaux(codeDep) {
                     if (!code) return null;
                     code = code.padStart(5, '0');
                     if (code.startsWith(codeDep.padStart(2, '0'))) {
-                        return {
-                            nomScientifique: cols[0]?.trim(),
-                            nomVernaculaire: cols[1]?.trim(),
-                            espece: cols[3]?.trim(),
-                            codeinseecommune: code,
-                            annee: annee
-                        };
+                    return {
+                        nomScientifique: cols[0]?.trim(),
+                        nomVernaculaire: cols[1]?.trim(),
+                        espece: cols[3]?.trim(),
+                        especeEvalueeLR: cols[5]?.trim().toLowerCase() === "true",
+                        especeReglementee: cols[6]?.trim().toLowerCase() === "true",
+                        codeinseecommune: code,
+                        annee: annee
+                    };
                     }
                     return null;
                 }).filter(Boolean);
@@ -215,7 +218,8 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
                 <div class="popup-close" onclick="fermerPopup()">×</div>
                 <h2 style="color: #5e8c61; margin-top: 0;">${stats.nomVernaculaire}</h2>
                 <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
-                <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
+                <p><strong>Espèce Liste Rouge :</strong> ${observations[0]?.especeEvalueeLR ? "Oui" : "Non"}</p>
+                <p><strong>Espèce réglementée :</strong> ${observations[0]?.especeReglementee ? "Oui" : "Non"}</p>
                 <p><strong>Observations à ${nomCommune}:</strong></p>
                 <ul style="list-style-type: none; padding: 0;">
     `;
@@ -302,6 +306,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
+
 
 
 
