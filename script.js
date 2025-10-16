@@ -196,14 +196,19 @@ function afficherOiseaux(codeCommune, nomCommune, oiseauxCommune) {
 }
 
 // --- AFFICHAGE DES STATISTIQUES (avec iframe corrigée) ---
-// --- AFFICHAGE DES STATISTIQUES (version finale avec photo et format paysage) ---
 function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) {
     afficherPopup();
 
+    // Sécurité : récupère la 1ère observation si elle existe
+    const firstObs = observations && observations.length > 0 ? observations[0] : {};
+
     const stats = {
-        nomScientifique: nomScientifique,
-        nomVernaculaire: observations[0]?.nomVernaculaire || "Inconnu",
-        observationsParAnnee: {}
+        nomScientifique: nomScientifique || firstObs.nomScientifique || "",
+        nomVernaculaire: firstObs.nomVernaculaire || "Inconnu",
+        observationsParAnnee: {},
+        // récupère les booléens (fallback à false si undefined)
+        especeEvalueeLR: !!firstObs.especeEvalueeLR,
+        especeReglementee: !!firstObs.especeReglementee
     };
 
     observations.forEach(o => {
@@ -224,13 +229,19 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
                 <div class="popup-close" onclick="fermerPopup()">×</div>
                 <h2 style="color: #5e8c61; margin-top: 0;">${stats.nomVernaculaire}</h2>
                 <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
-                <p><strong>Espèce Liste Rouge :</strong> ${observations[0]?.especeEvalueeLR ? "Oui" : "Non"}</p>
-                <p><strong>Espèce réglementée :</strong> ${observations[0]?.especeReglementee ? "Oui" : "Non"}</p>
+                <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
+
+                <p><strong>Espèce Liste Rouge :</strong> ${stats.especeEvalueeLR ? "✅ Oui" : "❌ Non"}</p>
+                <p><strong>Espèce réglementée :</strong> ${stats.especeReglementee ? "⚠️ Oui" : "Non"}</p>
+
                 <p><strong>Observations à ${nomCommune}:</strong></p>
                 <ul style="list-style-type: none; padding: 0;">
     `;
 
-    for (const [annee, count] of Object.entries(stats.observationsParAnnee).sort()) {
+    // tri par année croissante
+    const anneesTriees = Object.keys(stats.observationsParAnnee).sort();
+    for (const annee of anneesTriees) {
+        const count = stats.observationsParAnnee[annee];
         content += `<li>• ${annee}: ${count} observation(s)</li>`;
     }
 
@@ -255,9 +266,9 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) 
     }
 
     content += `</div></div>`;
-    popupContent.innerHTML = '<p>Espèce Liste Rouge : ' + especeEvalueeLR + '</p><p>Espèce Réglementée : ' + especeReglementee + '</p>' + content;
+    popupContent.innerHTML = content;
 
-    // Précharge le son si disponible (pour éviter les problèmes de CORS)
+    // Précharge le son si disponible
     if (sonsEspeces[stats.nomScientifique]?.son) {
         preloadAudio(sonsEspeces[stats.nomScientifique].son);
     }
@@ -312,6 +323,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
+
 
 
 
