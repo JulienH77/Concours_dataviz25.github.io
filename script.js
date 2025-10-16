@@ -93,7 +93,9 @@ function chargerTousLesOiseaux() {
     Promise.all(promises).then(resultats => {
         oiseauxData = resultats.flat();
         console.log("Données chargées :", oiseauxData.slice(0, 10));
-        afficherCouchesSurCarte();
+        setLoading(false); // ← on remet l’écran de chargement à off
+    });
+
     });
 }
 
@@ -350,6 +352,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
+
 
 
 
