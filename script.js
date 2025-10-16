@@ -36,8 +36,8 @@ function setLoading(show) {
 
 // --- AFFICHER/MASQUER LA POPUP ---
 function afficherPopup() {
-    popupOverlay.style.display = 'block';
-    popupStats.style.display = 'block';
+    popupOverlay.style.display = 'none';
+    popupStats.style.display = 'none';
 }
 
 function fermerPopup() {
@@ -67,8 +67,6 @@ async function chargerTousLesOiseaux(codeDep) {
                             nomScientifique: cols[0]?.trim(),
                             nomVernaculaire: cols[1]?.trim(),
                             espece: cols[3]?.trim(),
-                            especeEvalueeLR: cols[6]?.trim(),
-                            especeReglementee: cols[7]?.trim(),
                             codeinseecommune: code,
                             annee: annee
                         };
@@ -124,7 +122,8 @@ async function chargerCommunesParDep(codeDep) {
                     if (especesAvecSon.length > 0) {
                         especesAvecSon.forEach(nomScientifique => {
                             playChant(nomScientifique);
-                        });
+                            afficherPopup();
+});
                     }
 
                     afficherOiseaux(codeCommune, feature.properties.nom, oiseauxCommune);
@@ -182,21 +181,19 @@ function afficherOiseaux(codeCommune, nomCommune, oiseauxCommune) {
 
         // Événement pour afficher la popup
         badge.onclick = () => {
-            afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune, nomScientifique, especeEvalueeLR, especeReglementee);
+            afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune, nomScientifique);
         };
     });
 }
 
 // --- AFFICHAGE DES STATISTIQUES (avec iframe corrigée) ---
 // --- AFFICHAGE DES STATISTIQUES (version finale avec photo et format paysage) ---
-function afficherStatsEspece(espece, observations, nomCommune, nomScientifique, especeEvalueeLR, especeReglementee) {
+function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) {
     afficherPopup();
 
     const stats = {
         nomScientifique: nomScientifique,
         nomVernaculaire: observations[0]?.nomVernaculaire || "Inconnu",
-        especeEvalueeLR: especeEvalueeLR,
-        especeReglementee: especeReglementee,
         observationsParAnnee: {}
     };
 
@@ -218,8 +215,7 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique, 
                 <div class="popup-close" onclick="fermerPopup()">×</div>
                 <h2 style="color: #5e8c61; margin-top: 0;">${stats.nomVernaculaire}</h2>
                 <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
-                <p>Espèce Liste Rouge : {stats.especeEvalueeLR}</p>
-                <p>Espèce Réglementée : {stats.especeReglementee}</p>
+                <p><strong>Nom vernaculaire:</strong> ${stats.nomVernaculaire}</p>
                 <p><strong>Observations à ${nomCommune}:</strong></p>
                 <ul style="list-style-type: none; padding: 0;">
     `;
@@ -249,7 +245,7 @@ function afficherStatsEspece(espece, observations, nomCommune, nomScientifique, 
     }
 
     content += `</div></div>`;
-    popupContent.innerHTML = content;
+    popupContent.innerHTML = '<p>Espèce Liste Rouge : ' + especeEvalueeLR + '</p><p>Espèce Réglementée : ' + especeReglementee + '</p>' + content;
 
     // Précharge le son si disponible (pour éviter les problèmes de CORS)
     if (sonsEspeces[stats.nomScientifique]?.son) {
@@ -306,8 +302,6 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
-
-
 
 
 
