@@ -437,11 +437,13 @@ onEachFeature: async (feature, layer) => {
         await chargerCommunesParDep(codeDep);
         setLoading(false);
     });
+}})
 }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
 
 });
+
 
 
 
