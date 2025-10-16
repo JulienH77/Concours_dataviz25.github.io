@@ -65,7 +65,7 @@ function chargerTousLesOiseaux() {
     ];
 
     const promises = fichiers.map(fichier =>
-        fetch(`data/${fichier}`)
+        fetch(`donnees_concours/${fichier}`)
             .then(response => response.text())
             .then(csvText => {
                 const lignes = csvText.trim().split("\n");
@@ -74,17 +74,17 @@ function chargerTousLesOiseaux() {
 
                 return lignes.slice(1).map(ligne => {
                     const cols = ligne.split(";").map(c => c.trim().replace(/^"|"$/g, "")); 
-                    // supprime les guillemets en début/fin de chaque champ
-
-                    // Ajuste les indices ci-dessous selon ton CSV
                     return {
-                        espece: cols[0],
-                        nomScientifique: cols[1],
-                        nomVernaculaire: cols[2],
-                        codeinseecommune: cols[3],
-                        annee: annee,
-                        especeEvalueeLR: normaliserBooleen(cols[4]),
-                        especeReglementee: normaliserBooleen(cols[5])
+                        nomScientifique: cols[0],
+                        nomVernaculaire: cols[1],
+                        cdNom: cols[2],
+                        espece: cols[3],
+                        genre: cols[4],
+                        famille: cols[5],
+                        especeEvalueeLR: normaliserBooleen(cols[6]),
+                        especeReglementee: normaliserBooleen(cols[7]),
+                        codeinseecommune: cols[9],
+                        annee: parseInt(cols[10])
                     };
                 });
             })
@@ -350,6 +350,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
+
 
 
 
