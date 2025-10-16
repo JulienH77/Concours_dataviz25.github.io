@@ -1,22 +1,26 @@
-
 // --- INIT CARTE ET ÉLÉMENTS DOM ---
 const map = L.map('map').setView([48.8021, 5.8844], 8);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
 }).addTo(map);
 
-// Éléments DOM
+// DOM
 const loadingScreen = document.getElementById('loading-screen');
 const especesContainer = document.getElementById('especes-container');
 const popupOverlay = document.getElementById('popup-overlay');
 const popupStats = document.getElementById('popup-stats');
 const popupContent = document.getElementById('popup-content');
+const soundToggleBtn = document.getElementById('sound-toggle');
 
-// --- STYLES LEAFLET ---
+let windowOiseauxData = []; // toutes les observations pour le département courant
+window.oiseauxData = []; // compatibilité si on l'utilise ailleurs
+window.soundAuto = true; // par défaut lecture auto lors du clic commune
+
+// --- Styles leaflet ---
 const styleDep = { color: "black", weight: 3, opacity: 0.8, fill: true, fillColor: "white", fillOpacity: 0.75 };
 const styleCom = { color: "black", weight: 1, opacity: 0.5, fill: true, fillColor: "white", fillOpacity: 0.001 };
 
-// --- MAPPAGE DES SONS ET IFRAMES (corrigé) ---
+// --- sons mapping (garde le tien) ---
 const sonsEspeces = {
     "Turdus merula": {
         son: "https://xeno-canto.org/1047850/download",
@@ -26,54 +30,120 @@ const sonsEspeces = {
         son: "https://xeno-canto.org/1047609/download",
         iframe: "https://xeno-canto.org/1047609/embed?simple=1"
     }
-    // Ajoute d'autres espèces ici avec le même format
+    // etc...
 };
 
-// --- AFFICHER/MASQUER LE CHARGEMENT ---
+// --- utilitaires ---
 function setLoading(show) {
     loadingScreen.style.display = show ? 'flex' : 'none';
 }
-
-// --- AFFICHER/MASQUER LA POPUP ---
 function afficherPopup() {
     popupOverlay.style.display = 'block';
-    popupStats.style.display = 'flex';
+    popupStats.style.display = 'block';
 }
-
-
 function fermerPopup() {
     popupOverlay.style.display = 'none';
     popupStats.style.display = 'none';
+    popupContent.innerHTML = '';
+}
+
+// ferme popup si on clique sur overlay
+popupOverlay.addEventListener('click', fermerPopup);
+document.addEventListener('keydown', (e) => { if (e.key === "Escape") fermerPopup(); });
+
+// --- normalisation booléen et nettoyage champs ---
+function stripQuotes(s) {
+    if (s === undefined || s === null) return "";
+    return s.toString().trim().replace(/^"|"$/g, "");
+}
+function normaliserBooleen(val) {
+    if (val === undefined || val === null) return false;
+    const v = stripQuotes(val).toString().toLowerCase();
+    return v === "true" || v === "oui" || v === "1" || v === "x";
+}
+
+// --- PRÉCHARGEMENT SONS (caché) ---
+function preloadAudio(url) {
+    try {
+        const audio = new Audio();
+        audio.src = url;
+        audio.load();
+    } catch (e) {
+        console.warn("Préchargement audio impossible:", e);
+    }
+}
+
+// --- LECTURE DU SON (sans alert) ---
+function playChant(nomScientifique) {
+    const sonData = sonsEspeces[nomScientifique];
+    if (!sonData?.son) {
+        console.warn(`Aucun son configuré pour ${nomScientifique}`);
+        return;
+    }
+    if (window.currentAudio) {
+        window.currentAudio.pause();
+        window.currentAudio.currentTime = 0;
+    }
+    try {
+        window.currentAudio = new Audio(sonData.son);
+        window.currentAudio.play().catch(e => {
+            // suppression de l'alerte ; log uniquement
+            console.warn("Erreur de lecture audio (probablement bloquée par navigateur):", e);
+        });
+    } catch (e) {
+        console.error("Erreur playChant:", e);
+    }
+}
+
+// --- effet "on parle" sur badges ---
+function highlightEspeces(especeList) {
+    // retire ancien état
+    document.querySelectorAll('.espece-badge.speaking').forEach(b => b.classList.remove('speaking'));
+    // met en valeur ceux présents dans la liste
+    especeList.forEach(espece => {
+        const badge = document.querySelector(`.espece-badge[data-espece="${CSS.escape(espece)}"]`);
+        if (badge) badge.classList.add('speaking');
+    });
 }
 
 // --- CHARGEMENT DES OISEAUX ---
-function chargerTousLesOiseaux() {
+async function chargerTousLesOiseaux(codeDep) {
+    setLoading(true);
+
+    // liste des fichiers existants (pas 2023/2024)
     const fichiers = [
-        "oiseaux_2012.csv",
-        "oiseaux_2013.csv",
-        "oiseaux_2014.csv",
-        "oiseaux_2015.csv",
-        "oiseaux_2016.csv",
-        "oiseaux_2017.csv",
-        "oiseaux_2018.csv",
-        "oiseaux_2019.csv",
-        "oiseaux_2020.csv",
-        "oiseaux_2021.csv",
-        "oiseaux_2022.csv",
-        "oiseaux_2023.csv",
-        "oiseaux_2024.csv"
+        "oiseaux_2012.csv","oiseaux_2013.csv","oiseaux_2014.csv","oiseaux_2015.csv",
+        "oiseaux_2016.csv","oiseaux_2017.csv","oiseaux_2018.csv","oiseaux_2019.csv",
+        "oiseaux_2020.csv","oiseaux_2021.csv","oiseaux_2022.csv"
     ];
 
     const promises = fichiers.map(fichier =>
         fetch(`donnees_concours/${fichier}`)
-            .then(response => response.text())
-            .then(csvText => {
-                const lignes = csvText.trim().split("\n");
-                const header = lignes[0].split(";");
-                const annee = parseInt(fichier.match(/\d{4}/)[0]);
+            .then(r => {
+                if (!r.ok) {
+                    console.warn("Fichier non trouvé:", fichier);
+                    return "";
+                }
+                return r.text();
+            })
+            .then(txt => {
+                if (!txt) return [];
+                const lignes = txt.trim().split('\n');
+                const anneeFile = parseInt(fichier.match(/\d{4}/)[0]);
+                return lignes.slice(1).map(l => {
+                    if (!l || !l.trim()) return null;
+                    const cols = l.split(';').map(c => stripQuotes(c));
+                    // on vérifie qu'on a au moins 11 colonnes sinon on ignore
+                    if (cols.length < 11) return null;
 
-                return lignes.slice(1).map(ligne => {
-                    const cols = ligne.split(";").map(c => c.trim().replace(/^"|"$/g, "")); 
+                    // code commune (index 9 dans ton CSV)
+                    let code = cols[9]?.toString().trim();
+                    if (!code) return null;
+                    code = code.padStart(5, '0');
+
+                    // ne garder que le département demandé (prefixe)
+                    if (!code.startsWith(codeDep.padStart(2, '0'))) return null;
+
                     return {
                         nomScientifique: cols[0],
                         nomVernaculaire: cols[1],
@@ -83,29 +153,29 @@ function chargerTousLesOiseaux() {
                         famille: cols[5],
                         especeEvalueeLR: normaliserBooleen(cols[6]),
                         especeReglementee: normaliserBooleen(cols[7]),
-                        codeinseecommune: cols[9],
-                        annee: parseInt(cols[10])
+                        dateObservation: cols[8],
+                        codeinseecommune: code,
+                        annee: parseInt(cols[10]) || anneeFile
                     };
-                });
+                }).filter(Boolean);
+            })
+            .catch(err => {
+                console.error("Erreur lecture CSV:", fichier, err);
+                return [];
             })
     );
 
-    Promise.all(promises).then(resultats => {
-        oiseauxData = resultats.flat();
-        console.log("Données chargées :", oiseauxData.slice(0, 10));
-        setLoading(false); // ← on remet l’écran de chargement à off
-    });
+    const results = await Promise.all(promises);
+    const merged = results.flat();
+    window.oiseauxData = merged; // global
+    windowOiseauxData = merged; // local référence
+    console.log(`✅ Données chargées pour le département ${codeDep}:`, merged.length);
+
+    setLoading(false);
+    return merged;
 }
 
-function normaliserBooleen(val) {
-    if (!val) return false;
-    const v = val.toString().trim().toLowerCase().replace(/^"|"$/g, "");
-    return v === "true" || v === "oui" || v === "1" || v === "x";
-}
-
-
-
-// --- CHARGEMENT DES COMMUNES (corrigé) ---
+// --- CHARGEMENT DES COMMUNES ---
 async function chargerCommunesParDep(codeDep) {
     const deptFiles = {
         "08": "communes_08.geojson", "10": "communes_10.geojson", "51": "communes_51.geojson",
@@ -129,21 +199,44 @@ async function chargerCommunesParDep(codeDep) {
         window.layerCommunes = L.geoJSON(data, {
             style: styleCom,
             onEachFeature: (feature, layer) => {
-                layer.on('click', async () => {
+                layer.on('click', async (e) => {
+                    // reset des ronds d'espèces à chaque clic département/commune si nécessaire
+                    especesContainer.innerHTML = '';
+
                     const codeCommune = feature.properties.code.padStart(5, '0');
                     const oiseauxCommune = window.oiseauxData.filter(o => o.codeinseecommune === codeCommune);
 
-                    // Joue TOUS les chants disponibles pour cette commune
+                    // ouvre une popup leaflet classique (nom commune) au centre de la feature
+                    try {
+                        let latlng = null;
+                        if (layer.getBounds) latlng = layer.getBounds().getCenter();
+                        else if (layer.getLatLng) latlng = layer.getLatLng();
+                        if (latlng) {
+                            L.popup({ maxWidth: 250 })
+                                .setLatLng(latlng)
+                                .setContent(`<strong>${feature.properties.nom}</strong>`)
+                                .openOn(map);
+                        }
+                    } catch (err) {
+                        console.warn("Impossible d'ouvrir popup leaflet:", err);
+                    }
+
+                    // si son auto activé, joue les chants disponibles POUR LA COMMUNE
                     const especesAvecSon = [...new Set(oiseauxCommune.map(o => o.nomScientifique))]
                         .filter(nomScientifique => sonsEspeces[nomScientifique]);
 
-                    if (especesAvecSon.length > 0) {
-                        especesAvecSon.forEach(nomScientifique => {
-                            playChant(nomScientifique);
-                            afficherPopup();
-});
+                    if (window.soundAuto && especesAvecSon.length > 0) {
+                        // on joue seulement le PREMIER pour éviter cacophonie, puis on highlight toutes les espèces présentes
+                        playChant(especesAvecSon[0]);
+                        highlightEspeces(especesAvecSon);
+                        // précharge les autres éventuellement
+                        especesAvecSon.forEach(n => sonsEspeces[n]?.son && preloadAudio(sonsEspeces[n].son));
+                    } else {
+                        // retire highlight si son auto désactivé
+                        highlightEspeces([]);
                     }
 
+                    // affiche la liste des espèces pour la commune (sans ouvrir la popup overlay)
                     afficherOiseaux(codeCommune, feature.properties.nom, oiseauxCommune);
                 });
             }
@@ -153,7 +246,7 @@ async function chargerCommunesParDep(codeDep) {
     }
 }
 
-// --- AFFICHAGE DES ESPÈCES (corrigé pour les images) ---
+// --- AFFICHAGE DES ESPÈCES (badges) ---
 function afficherOiseaux(codeCommune, nomCommune, oiseauxCommune) {
     especesContainer.innerHTML = '';
 
@@ -162,32 +255,28 @@ function afficherOiseaux(codeCommune, nomCommune, oiseauxCommune) {
         return;
     }
 
-    // Compte les observations par espèce
+    // Compte observations par espèce
     const especesCount = {};
     oiseauxCommune.forEach(o => {
         const espece = o.espece;
         especesCount[espece] = (especesCount[espece] || 0) + 1;
     });
 
-    // Trie les espèces par nombre d'observations (décroissant)
-    const especesTriees = Object.entries(especesCount).sort((a, b) => b[1] - a[1]);
+    const especesTriees = Object.entries(especesCount).sort((a,b) => b[1]-a[1]);
 
-    // Affiche tous les badges avec images (correction des guillemets)
     especesTriees.forEach(([espece, count]) => {
         const observation = oiseauxCommune.find(o => o.espece === espece);
         const nomScientifique = observation?.nomScientifique || "";
 
         const badge = document.createElement('div');
         badge.className = 'espece-badge';
+        badge.setAttribute('data-espece', espece);
 
-        // Image avec fallback (correction du nom de fichier)
         const img = document.createElement('img');
-        const nomImage = espece.replace(/ /g, '_').replace(/"/g, ''); // Supprime les guillemets
+        const nomImage = espece.replace(/ /g, '_').replace(/"/g, '');
         img.src = `photos/${nomImage}.jpg`;
         img.alt = espece;
-        img.onerror = () => {
-            img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`;
-        };
+        img.onerror = () => { img.src = `https://via.placeholder.com/60?text=${encodeURIComponent(espece.charAt(0))}`; };
 
         const countSpan = document.createElement('span');
         countSpan.className = 'espece-count';
@@ -197,143 +286,100 @@ function afficherOiseaux(codeCommune, nomCommune, oiseauxCommune) {
         badge.appendChild(countSpan);
         especesContainer.appendChild(badge);
 
-        // Événement pour afficher la popup
+        // clic sur le rond : affiche la popup overlay détaillée
         badge.onclick = () => {
-            afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune, nomScientifique);
+            // récupère toutes les observations DEPARTEMENTALES pour cette espèce (pour calculer depuis quand)
+            const observationsDepartement = window.oiseauxData.filter(o => o.espece === espece);
+            afficherStatsEspece(espece, oiseauxCommune.filter(o => o.espece === espece), nomCommune, nomScientifique, observationsDepartement);
         };
     });
 }
 
-// --- AFFICHAGE DES STATISTIQUES (avec iframe corrigée) ---
-function afficherStatsEspece(espece, observations, nomCommune, nomScientifique) {
-    afficherPopup();
+// --- AFFICHAGE DES STATISTIQUES (popup overlay) ---
+// maintenant on reçoit aussi observationsDepartement pour calculer depuis quand
+function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScientifique, observationsDepartement = []) {
+    // calcul du premier annee true DANS LE DEPARTEMENT pour chaque statut
+    observationsDepartement.sort((a,b) => a.annee - b.annee);
 
-    if (!observations || observations.length === 0) {
-        popupContent.innerHTML = "<p>Aucune donnée disponible pour cette espèce.</p>";
-        return;
-    }
-
-    // --- Récupération des infos de base ---
-    const firstObs = observations[0];
-    const stats = {
-        nomScientifique: nomScientifique || firstObs.nomScientifique || "",
-        nomVernaculaire: firstObs.nomVernaculaire || "Inconnu",
-        observationsParAnnee: {}
-    };
-
-    // --- Calcul des observations par année ---
-    observations.forEach(o => {
-        const annee = o.annee;
-        stats.observationsParAnnee[annee] = (stats.observationsParAnnee[annee] || 0) + 1;
-    });
-
-    // --- Détermination de la première année "true" pour chaque statut ---
     let premiereAnneeLR = null;
     let premiereAnneeReglementee = null;
+    for (const o of observationsDepartement) {
+        if (o.especeEvalueeLR && premiereAnneeLR === null) premiereAnneeLR = o.annee;
+        if (o.especeReglementee && premiereAnneeReglementee === null) premiereAnneeReglementee = o.annee;
+        if (premiereAnneeLR !== null && premiereAnneeReglementee !== null) break;
+    }
 
-    observations.forEach(o => {
-        if (o.especeEvalueeLR && !premiereAnneeLR) premiereAnneeLR = o.annee;
-        if (o.especeReglementee && !premiereAnneeReglementee) premiereAnneeReglementee = o.annee;
+    const texteLR = premiereAnneeLR ? `✅ Oui (depuis ${premiereAnneeLR})` : `❌ Non`;
+    const texteReglementee = premiereAnneeReglementee ? `⚠️ Oui (depuis ${premiereAnneeReglementee})` : `Non`;
+
+    // stats observations par annee LOCAL (commune)
+    const observationsParAnnee = {};
+    (observationsCommune || []).forEach(o => {
+        observationsParAnnee[o.annee] = (observationsParAnnee[o.annee] || 0) + 1;
     });
 
-    // --- Texte pour affichage ---
-    const texteLR = premiereAnneeLR
-        ? `Oui (${premiereAnneeLR})`
-        : `Non`;
-    const texteReglementee = premiereAnneeReglementee
-        ? `⚠️ Oui (depuis ${premiereAnneeReglementee})`
-        : `Non`;
-
-    // --- Construction du contenu HTML ---
+    // construction HTML : left = image + iframe, right = texte/stats
     let content = `
-        <div style="display: flex; gap: 20px; width: 100%;">
-            <img
-                src="photos/${espece.replace(/ /g, '_').replace(/"/g, '')}.jpg"
-                alt="${espece}"
-                class="popup-image"
-                onerror="this.src='https://via.placeholder.com/200?text=${encodeURIComponent(espece.charAt(0))}'"
-            >
-            <div class="popup-right">
-                <div class="popup-close" onclick="fermerPopup()">×</div>
-                <h2 style="color: #5e8c61; margin-top: 0;">${stats.nomVernaculaire}</h2>
-                <p><strong>Nom scientifique:</strong> ${stats.nomScientifique}</p>
-                <p><strong>Espèce Liste Rouge :</strong> ${texteLR}</p>
-                <p><strong>Espèce réglementée :</strong> ${texteReglementee}</p>
-
-                <p><strong>Observations à ${nomCommune} :</strong></p>
-                <ul style="list-style-type: none; padding: 0;">
+        <div id="popup-inner" style="display:flex; gap: 20px; width:100%;">
+            <div class="popup-left">
+                <img src="photos/${espece.replace(/ /g, '_').replace(/"/g, '')}.jpg"
+                     alt="${espece}" class="popup-image"
+                     onerror="this.src='https://via.placeholder.com/220?text=${encodeURIComponent(espece.charAt(0))}'">
     `;
 
-    // --- Tri et affichage des observations ---
-    const anneesTriees = Object.keys(stats.observationsParAnnee).sort();
-    for (const annee of anneesTriees) {
-        const count = stats.observationsParAnnee[annee];
-        content += `<li>• ${annee}: ${count} observation(s)</li>`;
-    }
-
-    content += `</ul>`;
-
-    // --- Ajout de l'iframe si disponible ---
-    if (sonsEspeces[stats.nomScientifique]?.iframe) {
+    // iframe Xeno-canto (si existant)
+    if (sonsEspeces[nomScientifique]?.iframe) {
         content += `
-            <div style="margin-top: 15px; text-align: center;">
-                <iframe
-                    src="${sonsEspeces[stats.nomScientifique].iframe}"
-                    scrolling="no"
-                    frameborder="0"
-                    width="100%"
-                    height="100"
-                    style="border-radius: 5px; max-width: 320px;"
-                ></iframe>
+            <div class="popup-iframe">
+                <iframe src="${sonsEspeces[nomScientifique].iframe}"
+                        scrolling="no" frameborder="0"
+                        width="100%" height="100%"></iframe>
             </div>
         `;
-    } else {
-        content += `<p style="color: #7f8c8d; margin-top: 10px;">Aucun enregistrement audio disponible.</p>`;
     }
 
-    content += `</div></div>`;
+    content += `</div>`; // ferme popup-left
+
+    // droite
+    content += `
+        <div class="popup-right">
+            <div class="popup-close" onclick="fermerPopup()">×</div>
+            <h2 style="color: #5e8c61; margin-top: 0;">${observationsCommune[0]?.nomVernaculaire || nomScientifique}</h2>
+            <p><strong>Nom scientifique:</strong> ${nomScientifique}</p>
+            <p><strong>Espèce Liste Rouge :</strong> ${texteLR}</p>
+            <p><strong>Espèce réglementée :</strong> ${texteReglementee}</p>
+
+            <p style="margin-top:6px;"><strong>Observations à ${nomCommune} :</strong></p>
+            <ul style="list-style-type:none; padding-left:0;">
+    `;
+
+    const anneesTriees = Object.keys(observationsParAnnee).sort();
+    for (const annee of anneesTriees) {
+        content += `<li>• ${annee}: ${observationsParAnnee[annee]} observation(s)</li>`;
+    }
+
+    content += `</ul></div></div>`;
     popupContent.innerHTML = content;
 
-    // Précharge le son si dispo
-    if (sonsEspeces[stats.nomScientifique]?.son) {
-        preloadAudio(sonsEspeces[stats.nomScientifique].son);
-    }
+    // affiche overlay popup
+    afficherPopup();
+
+    // précharge son si existant
+    if (sonsEspeces[nomScientifique]?.son) preloadAudio(sonsEspeces[nomScientifique].son);
 }
 
-
-        
-// --- PRÉCHARGEMENT DES SONS (nouvelle fonction) ---
-function preloadAudio(url) {
-    const audio = new Audio();
-    audio.src = url;
-    audio.load();
-    // Pas besoin de jouer, juste de précharger
-}
-
-        
-// --- LECTURE DU SON (version corrigée avec gestion des erreurs) ---
-function playChant(nomScientifique) {
-    const sonData = sonsEspeces[nomScientifique];
-    if (!sonData?.son) {
-        console.warn(`Aucun son configuré pour ${nomScientifique}`);
-        return;
+// --- Bouton son top-right ---
+soundToggleBtn.addEventListener('click', () => {
+    window.soundAuto = !window.soundAuto;
+    soundToggleBtn.classList.toggle('off', !window.soundAuto);
+    if (!window.soundAuto) {
+        // stop audio et highlight
+        if (window.currentAudio) { window.currentAudio.pause(); window.currentAudio = null; }
+        highlightEspeces([]);
     }
+});
 
-    // Vérifie si l'audio est déjà en cours de lecture
-    if (window.currentAudio) {
-        window.currentAudio.pause();
-        window.currentAudio.currentTime = 0;
-    }
-
-    // Crée et joue l'audio
-    window.currentAudio = new Audio(sonData.son);
-    window.currentAudio.play().catch(e => {
-        console.error("Erreur de lecture audio:", e);
-        alert("Impossible de lire le chant. Le navigateur bloque peut-être les lectures automatiques. Cliquez sur le lecteur dans la popup.");
-    });
-}
-
-// --- CHARGEMENT DES DÉPARTEMENTS ---
+// --- CHARGEMENT DES DÉPARTEMENTS (initial) ---
 fetch("donnees_concours/departements-grand-est.geojson")
     .then(response => response.json())
     .then(data => {
@@ -342,23 +388,14 @@ fetch("donnees_concours/departements-grand-est.geojson")
             onEachFeature: async (feature, layer) => {
                 layer.on('click', async () => {
                     const codeDep = feature.properties.code.toString();
+                    // reset zone des ronds d'espèces dès qu'on change de département
+                    especesContainer.innerHTML = '';
                     setLoading(true);
-                    window.oiseauxData = await chargerTousLesOiseaux(codeDep);
+                    await chargerTousLesOiseaux(codeDep);
                     await chargerCommunesParDep(codeDep);
+                    setLoading(false);
                 });
             }
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
-
-
-
-
-
-
-
-
-
-
-
-
