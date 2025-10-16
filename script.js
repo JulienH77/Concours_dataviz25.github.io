@@ -4,6 +4,17 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
 }).addTo(map);
 
+
+map.on('click', () => {
+    // ferme popup leaflet
+    map.closePopup();
+    // ferme popup overlay si ouverte
+    if (typeof fermerPopup === 'function') fermerPopup();
+    // retire highlight
+    document.querySelectorAll('.espece-badge.speaking').forEach(b => b.classList.remove('speaking'));
+});
+
+
 // DOM
 const loadingScreen = document.getElementById('loading-screen');
 const especesContainer = document.getElementById('especes-container');
@@ -322,8 +333,8 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
         if (premiereAnneeLR !== null && premiereAnneeReglementee !== null) break;
     }
 
-    const texteLR = premiereAnneeLR ? `✅ Oui (depuis ${premiereAnneeLR})` : `❌ Non`;
-    const texteReglementee = premiereAnneeReglementee ? `⚠️ Oui (depuis ${premiereAnneeReglementee})` : `Non`;
+    const texteLR = premiereAnneeLR ? `Oui (depuis ${premiereAnneeLR})` : `Non`;
+    const texteReglementee = premiereAnneeReglementee ? `Oui (depuis ${premiereAnneeReglementee})` : `Non`;
 
     // stats observations par annee LOCAL (commune)
     const observationsParAnnee = {};
@@ -359,8 +370,8 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
             <div class="popup-close" onclick="fermerPopup()">×</div>
             <h2 style="color: #5e8c61; margin-top: 0;">${observationsCommune[0]?.nomVernaculaire || nomScientifique}</h2>
             <p><strong>Nom scientifique:</strong> ${nomScientifique}</p>
-            <p><strong>Espèce Liste Rouge :</strong> ${texteLR}</p>
-            <p><strong>Espèce réglementée :</strong> ${texteReglementee}</p>
+            <!--<p><strong>Espèce Liste Rouge :</strong> ${texteLR}</p>-->
+            <!--<p><strong>Espèce réglementée :</strong> ${texteReglementee}</p>-->
 
             <p style="margin-top:6px;"><strong>Observations à ${nomCommune} :</strong></p>
             <ul style="list-style-type:none; padding-left:0;">
@@ -407,10 +418,30 @@ fetch("donnees_concours/departements-grand-est.geojson")
                     await chargerTousLesOiseaux(codeDep);
                     await chargerCommunesParDep(codeDep);
                     setLoading(false);
+                    
+    // --- STOPPE le son en cours et retire les highlights ---
+    if (window.currentAudio && !window.currentAudio.paused) {
+        try {
+            window.currentAudio.pause();
+            window.currentAudio.currentTime = 0;
+        } catch (e) { console.warn("Impossible d'arrêter l'audio :", e); }
+    }
+    // retire l'effet visuel "speaking" sur les badges
+    document.querySelectorAll('.espece-badge.speaking').forEach(b => b.classList.remove('speaking'));
+
+    // reset de la zone des ronds d'espèces (tu l'avais demandé aussi)
+    especesContainer.innerHTML = '';
+
+    // puis lance le chargement du département
+    setLoading(true);
+    await chargerTousLesOiseaux(codeDep);
+    await chargerCommunesParDep(codeDep);
+    setLoading(false);
                 });
-            }
+            }           
         }).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
 
 });
+
