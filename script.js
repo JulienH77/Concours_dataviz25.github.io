@@ -345,7 +345,6 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
     // construction HTML : left = image + iframe, right = texte/stats
     let content = `
         <div style="position: relative;">
-        <button class="popup-close" onclick="fermerPopup()">×</button>
         <div id="popup-inner" style="display:flex; gap: 20px; width:100%;">
             <div class="popup-left">
                 <img src="photos/${espece.replace(/ /g, '_').replace(/"/g, '')}.jpg"
@@ -374,7 +373,7 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
             <!--<p><strong>Espèce Liste Rouge :</strong> ${texteLR}</p>-->
             <!--<p><strong>Espèce réglementée :</strong> ${texteReglementee}</p>-->
 
-            <p style="margin-top:6px; margin-bottom:-10px;"><strong>Observations à ${nomCommune} :</strong></p>
+            <p style="margin-top:6px; margin-bottom:0px;"><strong>Observations à ${nomCommune} :</strong></p>
             <ul style="list-style-type:none; padding-left:0;">
     `;
 
@@ -386,6 +385,17 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
     content += `</ul></div></div></div></div>`;
     popupContent.innerHTML = content;
 
+
+    // stoppe le son en cours si popup ouverte
+    if (window.currentAudio && !window.currentAudio.paused) {
+        try {
+            window.currentAudio.pause();
+            window.currentAudio.currentTime = 0;
+        } catch (e) {
+            console.warn("Impossible d'arrêter l'audio :", e);
+        }
+    }
+    
     // affiche overlay popup
     afficherPopup();
 
@@ -440,3 +450,4 @@ fetch("donnees_concours/departements-grand-est.geojson")
     .catch(err => console.error("Erreur chargement départements:", err));
 
 });
+
