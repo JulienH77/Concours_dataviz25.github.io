@@ -410,53 +410,39 @@ fetch("donnees_concours/departements-grand-est.geojson")
     .then(data => {
         L.geoJSON(data, {
             style: styleDep,
-            onEachFeature: async (feature, layer) => {
-                layer.on('click', async () => {
-                    const codeDep = feature.properties.code.toString();
-            
-                    // stop son et reset visuel
-                    if (window.currentAudio && !window.currentAudio.paused) {
-                        try {
-                            window.currentAudio.pause();
-                            window.currentAudio.currentTime = 0;
-                        } catch (e) { console.warn("Impossible d'arrêter l'audio :", e); }
-                    }
-                    document.querySelectorAll('.espece-badge.speaking').forEach(b => b.classList.remove('speaking'));
-                    especesContainer.innerHTML = '';
-            
-                    // charge les données du département
-                    setLoading(true);
-                    await chargerTousLesOiseaux(codeDep);
-                    await chargerCommunesParDep(codeDep);
-                    setLoading(false);
-                });
-            }
-
+onEachFeature: async (feature, layer) => {
+    layer.on('click', async () => {
+        const codeDep = feature.properties.code.toString();
+        // reset zone des ronds d'espèces dès qu'on change de département
+        especesContainer.innerHTML = '';
+        setLoading(true);
+        await chargerTousLesOiseaux(codeDep);
+        await chargerCommunesParDep(codeDep);
+        setLoading(false);
                     
-    // --- STOPPE le son en cours et retire les highlights ---
-    if (window.currentAudio && !window.currentAudio.paused) {
-        try {
-            window.currentAudio.pause();
-            window.currentAudio.currentTime = 0;
-        } catch (e) { console.warn("Impossible d'arrêter l'audio :", e); }
-    }
-    // retire l'effet visuel "speaking" sur les badges
-    document.querySelectorAll('.espece-badge.speaking').forEach(b => b.classList.remove('speaking'));
+        // --- STOPPE le son en cours et retire les highlights ---
+        if (window.currentAudio && !window.currentAudio.paused) {
+            try {
+                window.currentAudio.pause();
+                window.currentAudio.currentTime = 0;
+            } catch (e) { console.warn("Impossible d'arrêter l'audio :", e); }
+        }
+        document.querySelectorAll('.espece-badge.speaking').forEach(b => b.classList.remove('speaking'));
 
-    // reset de la zone des ronds d'espèces (tu l'avais demandé aussi)
-    especesContainer.innerHTML = '';
+        especesContainer.innerHTML = '';
 
-    // puis lance le chargement du département
-    setLoading(true);
-    await chargerTousLesOiseaux(codeDep);
-    await chargerCommunesParDep(codeDep);
-    setLoading(false);
-                });
-        }).addTo(map);
+        // puis lance le chargement du département
+        setLoading(true);
+        await chargerTousLesOiseaux(codeDep);
+        await chargerCommunesParDep(codeDep);
+        setLoading(false);
+    });
+}).addTo(map);
     })
     .catch(err => console.error("Erreur chargement départements:", err));
 
 });
+
 
 
 
