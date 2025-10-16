@@ -12,7 +12,7 @@
 </head>
 <body>
     <h1>Le Grand-Est chanté ♫</h1>
-    <div id="map"></div>
+    <!--<div id="map"></div>
     <div id="loading-screen">
         <img src="IMG/canard_loading.gif" alt="Chargement...">
     </div>
@@ -22,14 +22,22 @@
         <span class="popup-close" onclick="fermerPopup()">×</span>
         <div id="popup-content"></div>
     </div>
+    <button id="sound-toggle" aria-label="Activer/Désactiver son automatique" title="Activer/Désactiver son automatique">♪</button>-->
+    
+    <button id="sound-toggle" aria-label="Activer le son" title="Activer le son">🔊</button>
+    <button id="choose-species" aria-label="Choisir une espèce" title="Choisir une espèce">🕊️ Choisir une espèce</button>
+    <div id="map"></div>
+    <div id="popup" class="popup hidden">
+      <div class="popup-content"></div>
+      <button class="popup-close">✖</button>
+    </div>
 
-    <!-- bouton pour activer/désactiver le son automatique -->
-    <button id="sound-toggle" aria-label="Activer/Désactiver son automatique" title="Activer/Désactiver son automatique">♪</button>
-
+    
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
