@@ -438,7 +438,6 @@ onEachFeature: async (feature, layer) => {
     })
     .catch(err => console.error("Erreur chargement départements:", err));
 
-});
 
 
 
