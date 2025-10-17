@@ -124,11 +124,8 @@
 }
 
 
-
-
 /* Contenu interne: 2 colonnes (gauche photo+iframe / droite texte) */
 #popup-content {
-    display: flex;
     gap: 20px;
     align-items: flex-start;
     overflow-y: auto;
@@ -221,6 +218,7 @@
     .popup-left { flex: none; }
     .popup-right { width: 100%; }
 }
+
 
 
 
