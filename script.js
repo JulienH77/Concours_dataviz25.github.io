@@ -40,6 +40,10 @@ const sonsEspeces = {
     "Passer domesticus": {
         son: "https://xeno-canto.org/1047609/download",
         iframe: "https://xeno-canto.org/1047609/embed?simple=1"
+    },
+    "Carduelis carduelis": {
+        son: "https://xeno-canto.org/1007384/download",
+        iframe: "https://xeno-canto.org/1007384/embed?simple=1"
     }
     // etc...
 };
@@ -571,3 +575,4 @@ function colorerCommunesPourEspece(espece) {
 // === FIN AJOUT 2 ===
 
 }); // fin DOMContentLoaded
+
