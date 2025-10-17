@@ -1,5 +1,4 @@
-// --- sons mapping ---
-const sonsEspeces = {
+window.sonsEspeces = {
     "Turdus merula": {
         son: "https://xeno-canto.org/1047850/download",
         iframe: "https://xeno-canto.org/1047850/embed?simple=1"
