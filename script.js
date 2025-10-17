@@ -516,11 +516,11 @@ chooseSpeciesBtn.addEventListener('click', () => {
     // === Contenu de la popup de sélection ===
     let html = `
         <h2 style="text-align:center;color:#5e8c61;margin-bottom:6px;">Choisissez l'espèce que vous voulez rencontrer</h2>
-        <div style="text-align:center;font-size:14px;margin-bottom:8px;">
-            <strong>Légende :</strong>
-            <span style="display:inline-block;width:15px;height:15px;background:#d9534f;border-radius:3px;margin-left:6px;"></span> 2012–2016
-            <span style="display:inline-block;width:15px;height:15px;background:#f0ad4e;border-radius:3px;margin-left:6px;"></span> 2017–2019
-            <span style="display:inline-block;width:15px;height:15px;background:#5e8c61;border-radius:3px;margin-left:6px;"></span> 2020–2022
+        <div style="text-align:center;font-size:14px;margin-bottom:10px;">
+            <strong>Apperçu pour la dernière fois :</strong>
+            <span style="display:inline-block;width:15px;height:15px;background:#d9534f;border-radius:3px;margin-left:6px;"></span> Avant 2016
+            <span style="display:inline-block;width:15px;height:15px;background:#f0ad4e;border-radius:3px;margin-left:6px;"></span> Entre 2017 et 2019
+            <span style="display:inline-block;width:15px;height:15px;background:#5e8c61;border-radius:3px;margin-left:6px;"></span> 2020 ou après
         </div>
         <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-height:65vh;overflow:auto;padding:6px;width:95%;margin:auto;">
     `;
@@ -624,6 +624,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
