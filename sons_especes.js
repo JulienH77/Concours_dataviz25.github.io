@@ -105,6 +105,45 @@ window.sonsEspeces = {
 
 
 
+
+    
+    "Passer montanus": {
+        son: "https://xeno-canto.org/1046637/download",
+        iframe: "https://xeno-canto.org/1046637/embed?simple=1"
+    },
+    "Periparus ater": {
+        son: "https://xeno-canto.org/1027965/download",
+        iframe: "https://xeno-canto.org/1027965/embed?simple=1"
+    },
+    "Phoenicurus ochruros": {
+        son: "https://xeno-canto.org/1041307/download",
+        iframe: "https://xeno-canto.org/1041307/embed?simple=1"
+    },
+    "Phoenicurus phoenicurus": {
+        son: "https://xeno-canto.org/1027582/download",
+        iframe: "https://xeno-canto.org/1027582/embed?simple=1"
+    },
+    "Phylloscopus collybita": {
+        son: "https://xeno-canto.org/1047273/download",
+        iframe: "https://xeno-canto.org/1047273/embed?simple=1"
+    },
+    "Pica pica": {
+        son: "https://xeno-canto.org/1046470/download",
+        iframe: "https://xeno-canto.org/1046470/embed?simple=1"
+    },
+    "Picus viridis": {
+        son: "https://xeno-canto.org/976080/download",
+        iframe: "https://xeno-canto.org/976080/embed?simple=1"
+    },
+    "Poecile palustris": {
+        son: "https://xeno-canto.org/983198/download",
+        iframe: "https://xeno-canto.org/983198/embed?simple=1"
+    },
+
+
+
+    
+
     
     // etc...
 
