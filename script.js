@@ -46,7 +46,11 @@ function fermerPopup() {
     popupOverlay.style.display = 'none';
     popupStats.style.display = 'none';
     popupContent.innerHTML = '';
+    // restaure la largeur par défaut du popup (au cas où on l'avait élargi)
+    popupStats.style.maxWidth = '';
 }
+window.fermerPopup = fermerPopup;
+
 
 // ferme popup si on clique sur overlay
 popupOverlay.addEventListener('click', fermerPopup);
@@ -371,10 +375,15 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
     // précharge son si existant
     if (sonsEspeces[nomScientifique]?.son) preloadAudio(sonsEspeces[nomScientifique].son);
 
-    // === AJOUT 1 : graphique Apache ECharts (empilé, commune en couleur + autres départements en gris) ===
+    // Graphique Apache ECharts (empilé, commune en couleur + autres départements en gris) ===
     setTimeout(() => {
         const chartDom = document.getElementById(`echart-${nomScientifique.replace(/ /g,'_')}`);
         if (!chartDom) return;
+        
+        // léger ajustement visuel demandé : remonter le canvas et laisser l'axe Y respirer
+        chartDom.style.position = 'relative';
+        chartDom.style.top = '-20px';
+
 
         const annees = Array.from({length: 11}, (_, i) => 2012 + i);
         const dataLocal = annees.map(a => observationsParAnnee[a] || 0);
@@ -432,7 +441,7 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
             legend: { show: false },
             grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
             xAxis: { type: 'category', data: annees, axisLabel: { color: '#333' } },
-            yAxis: { type: 'value', name: "Nombre d'observations", axisLabel: { color: '#333' } },
+            yAxis: {type: 'value', name: "Nombre d'observations", nameTextStyle: { color: '#333', align: 'left' }, nameGap: 40, axisLabel: { color: '#333' } },
             series,
             animationDuration: 700,
             animationEasing: 'cubicOut'
@@ -480,6 +489,10 @@ fetch("donnees_concours/departements-grand-est.geojson")
                     setLoading(true);
                     await chargerTousLesOiseaux(codeDep);
                     await chargerCommunesParDep(codeDep);
+                    const chosen = document.getElementById('chosen-species-badge');
+                    if (chosen) chosen.remove();
+
+                    
                     setLoading(false);
                 });
             }
@@ -507,6 +520,70 @@ chooseSpeciesBtn.style.transition = '0.2s';
 chooseSpeciesBtn.onmouseover = () => { chooseSpeciesBtn.style.background = '#5e8c61'; chooseSpeciesBtn.style.color = 'white'; };
 chooseSpeciesBtn.onmouseout = () => { chooseSpeciesBtn.style.background = 'white'; chooseSpeciesBtn.style.color = 'black'; };
 document.body.appendChild(chooseSpeciesBtn);
+// --- UI: container pour afficher le badge de l'espèce choisie (à gauche du bouton) ---
+const chosenContainer = document.createElement('div');
+chosenContainer.id = 'chosen-species-container';
+chosenContainer.style.position = 'fixed';
+chosenContainer.style.top = '20px';
+chosenContainer.style.right = '150px'; // se place à gauche du bouton (ajuste si nécessaire)
+chosenContainer.style.zIndex = '1000';
+chosenContainer.style.display = 'flex';
+chosenContainer.style.alignItems = 'center';
+chosenContainer.style.gap = '8px';
+chosenContainer.style.pointerEvents = 'auto';
+document.body.appendChild(chosenContainer);
+
+function showChosenSpeciesBadge(espece) {
+    // supprime ancien badge
+    chosenContainer.innerHTML = '';
+
+    if (!espece) return;
+
+    const obsDepartement = window.oiseauxData.filter(o => o.espece === espece);
+    const nomScientifique = obsDepartement[0]?.nomScientifique || '';
+
+    const badge = document.createElement('div');
+    badge.id = 'chosen-species-badge';
+    badge.title = `Ouvrir la fiche de ${espece}`;
+    badge.style.display = 'flex';
+    badge.style.flexDirection = 'column';
+    badge.style.alignItems = 'center';
+    badge.style.cursor = 'pointer';
+
+    const img = document.createElement('img');
+    img.src = `photos/${espece.replace(/ /g, '_').replace(/"/g, '')}.jpg`;
+    img.alt = espece;
+    img.style.width = '42px';
+    img.style.height = '42px';
+    img.style.objectFit = 'cover';
+    img.style.borderRadius = '50%';
+    img.style.border = '2px solid #5e8c61';
+    img.onerror = () => { img.src = `https://via.placeholder.com/42?text=${encodeURIComponent(espece.charAt(0))}`; };
+
+    const label = document.createElement('div');
+    label.textContent = obsDepartement[0]?.nomVernaculaire || espece;
+    label.style.fontSize = '11px';
+    label.style.maxWidth = '100px';
+    label.style.textAlign = 'center';
+    label.style.marginTop = '3px';
+
+    badge.appendChild(img);
+    badge.appendChild(label);
+    chosenContainer.appendChild(badge);
+
+    // click => ouvre la popup "espèce" (vue globale : on passe toutes les observations departementales)
+    badge.addEventListener('click', () => {
+        // On utilise afficherStatsEspece en mode "vue globale" :
+        const observationsDepartement = window.oiseauxData.filter(o => o.espece === espece);
+        // Pour "observationsCommune" on passe la même liste (aggregate) — le graphique montrera la répartition.
+        const observationsCommune = observationsDepartement;
+        const nomCommune = 'Toutes les communes';
+        // On récupère le nom scientifique (si existant)
+        const nomScientifiqueLocal = observationsDepartement[0]?.nomScientifique || '';
+        afficherStatsEspece(espece, observationsCommune, nomCommune, nomScientifiqueLocal, observationsDepartement);
+    });
+}
+
 chooseSpeciesBtn.addEventListener('click', () => {
     if (!window.oiseauxData.length) {
         alert("Clique d'abord sur un département pour charger les données !");
@@ -515,7 +592,7 @@ chooseSpeciesBtn.addEventListener('click', () => {
 
     // === Contenu de la popup de sélection ===
     let html = `
-        <h2 style="text-align:center;color:#5e8c61;margin-bottom:6px;">Choisissez l'espèce que vous voulez rencontrer</h2>
+        <h2 style="text-align:center;color:#5e8c61;margin-bottom:6px;margin-top:0px;">Choisissez l'espèce que vous voulez rencontrer</h2>
         <div style="text-align:center;font-size:14px;margin-bottom:10px;">
             <strong>Apperçu pour la dernière fois :</strong>
             <span style="display:inline-block;width:15px;height:15px;background:#d9534f;border-radius:3px;margin-left:6px;"></span> Avant 2016
@@ -553,9 +630,12 @@ chooseSpeciesBtn.addEventListener('click', () => {
             fermerPopup();
 
             if (nomScientifique) playChant(nomScientifique);
-
+            
             // Coloration des communes selon dernière année d’observation
             colorerCommunesPourEspeceParPeriode(especeChoisie);
+            
+            // affiche le petit badge de l'espèce choisie à gauche du bouton
+            showChosenSpeciesBadge(especeChoisie);
         });
     });
 });
@@ -624,6 +704,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
