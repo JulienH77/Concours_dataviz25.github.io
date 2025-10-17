@@ -43,6 +43,41 @@ window.sonsEspeces = {
         son: "https://xeno-canto.org/1022103/download",
         iframe: "https://xeno-canto.org/1022103/embed?simple=1"
     },
+    "Dendrocopos major": {
+        son: "https://xeno-canto.org/1046442/download",
+        iframe: "https://xeno-canto.org/1046442/embed?simple=1"
+    },
+    "Emberiza cirlus": {
+        son: "https://xeno-canto.org/1044322/download",
+        iframe: "https://xeno-canto.org/1044322/embed?simple=1"
+    },
+    "Emberiza citrinella": {
+        son: "https://xeno-canto.org/957093/download",
+        iframe: "https://xeno-canto.org/957093/embed?simple=1"
+    },
+    "Erithacus rubecula": {
+        son: "https://xeno-canto.org/1045471/download",
+        iframe: "https://xeno-canto.org/1045471/embed?simple=1"
+    },
+    "Fringilla coelebs": {
+        son: "https://xeno-canto.org/1031054/download",
+        iframe: "https://xeno-canto.org/1031054/embed?simple=1"
+    },
+    "Fringilla montifringilla": {
+        son: "https://xeno-canto.org/900455/download",
+        iframe: "https://xeno-canto.org/900455/embed?simple=1"
+    },
+
+
+
+
+
+
+
+
+
+
+    
     // etc...
 
 
