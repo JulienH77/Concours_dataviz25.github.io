@@ -441,12 +441,8 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
             legend: { show: false },
             grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
             xAxis: { type: 'category', data: annees, axisLabel: { color: '#333' } },
-            /*yAxis: {type: 'value', name: "Nombre d'observations", nameTextStyle: { color: '#333', align: 'center', padding: [0, 28, 0, 0] }, nameGap: 28, axisLabel: { color: '#333', margin: 12 }},*/
-            series,
-            animationDuration: 700,
-            animationEasing: 'cubicOut'
-        });
-
+yAxis: { type: 'value', axisLabel: { color: '#333', margin: 12 }, splitLine: { show: true }}, series, animationDuration: 700, animationEasing: 'cubicOut'});
+        
         window.addEventListener('resize', () => chart.resize());
     }, 200);
     // === FIN AJOUT 1 ===
@@ -705,6 +701,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
