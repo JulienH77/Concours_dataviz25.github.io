@@ -558,8 +558,8 @@ function showChosenSpeciesBadge(espece) {
 
     const label = document.createElement('div');
     label.textContent = obsDepartement[0]?.nomVernaculaire || espece;
-    label.style.fontSize = '11px';
-    label.style.maxWidth = '100px';
+    label.style.fontSize = '0.75em';
+    label.style.maxWidth = '130px';
     label.style.textAlign = 'center';
     label.style.marginTop = '3px';
     label.style.marginRight = '3px';
@@ -701,6 +701,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
