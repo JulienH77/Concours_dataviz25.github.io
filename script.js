@@ -31,22 +31,8 @@ const styleCom = { color: "black", weight: 1, opacity: 0.5, fill: true, fillColo
 
 document.addEventListener('DOMContentLoaded', () => {
 
-// --- sons mapping (garde le tien) ---
-const sonsEspeces = {
-    "Turdus merula": {
-        son: "https://xeno-canto.org/1047850/download",
-        iframe: "https://xeno-canto.org/1047850/embed?simple=1"
-    },
-    "Passer domesticus": {
-        son: "https://xeno-canto.org/1047609/download",
-        iframe: "https://xeno-canto.org/1047609/embed?simple=1"
-    },
-    "Carduelis carduelis": {
-        son: "https://xeno-canto.org/1007384/download",
-        iframe: "https://xeno-canto.org/1007384/embed?simple=1"
-    }
-    // etc...
-};
+// --- Récupère le mapping de sons défini dans le fichier externe ---
+const sonsEspeces = window.sonsEspeces || {};
 
 // --- utilitaires ---
 function setLoading(show) {
@@ -575,4 +561,5 @@ function colorerCommunesPourEspece(espece) {
 // === FIN AJOUT 2 ===
 
 }); // fin DOMContentLoaded
+
 
