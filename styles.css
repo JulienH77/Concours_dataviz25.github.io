@@ -209,15 +209,13 @@
 /* assure que le popup leaflet (sur la carte) s'affiche correctement */
 .leaflet-container .leaflet-popup-content-wrapper { font-family: 'Cormorant Garamond', serif; }
 
-.popup-right p { margin: 4px 0; }
-.popup-right ul { margin-top: 2px; }
-
 /* responsive: pour petits écrans on empile */
 @media (max-width: 700px) {
     #popup-content { flex-direction: column; align-items: center; }
     .popup-left { flex: none; }
     .popup-right { width: 100%; }
 }
+
 
 
 
