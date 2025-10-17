@@ -1,0 +1,4 @@
+- fleche haut/bas comme la bourse en haut a gauche des ronds des especes pour dire si on en a vu plus ou moins qu'avant.
+- quand le choix de l'espece est fait, les communes coloriées seront en degradé rouge/jaune/vert en fonction de la derniere date de recensement et ajouter une legende dans la popup de choix.
+
+- ajouter la page du papillon.
