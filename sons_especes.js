@@ -69,26 +69,49 @@ window.sonsEspeces = {
     },
 
 
-
-
-
-
-
+    
+    "Garrulus glandarius": {
+        son: "https://xeno-canto.org/1041506/download",
+        iframe: "https://xeno-canto.org/1041506/embed?simple=1"
+    },
+    "Hirundo rustica": {
+        son: "https://xeno-canto.org/1043342/download",
+        iframe: "https://xeno-canto.org/1043342/embed?simple=1"
+    },
+    "Linaria cannabina": {
+        son: "https://xeno-canto.org/1008473/download",
+        iframe: "https://xeno-canto.org/1008473/embed?simple=1"
+    },
+    "Lophophanes cristatus": {
+        son: "https://xeno-canto.org/979811/download",
+        iframe: "https://xeno-canto.org/979811/embed?simple=1"
+    },
+    "Motacilla alba": {
+        son: "https://xeno-canto.org/989395/download",
+        iframe: "https://xeno-canto.org/989395/embed?simple=1"
+    },
+    "Muscicapa striata": {
+        son: "https://xeno-canto.org/1041339/download",
+        iframe: "https://xeno-canto.org/1041339/embed?simple=1"
+    },
+    "Parus major": {
+        son: "https://xeno-canto.org/1047739/download",
+        iframe: "https://xeno-canto.org/1047739/embed?simple=1"
+    },
+    "Passer domesticus": {
+        son: "https://xeno-canto.org/1047609/download",
+        iframe: "https://xeno-canto.org/1047609/embed?simple=1"
+    },
 
 
 
     
     // etc...
 
-
     
     "Turdus merula": {
         son: "https://xeno-canto.org/1047850/download",
         iframe: "https://xeno-canto.org/1047850/embed?simple=1"
-    },
-    "Passer domesticus": {
-        son: "https://xeno-canto.org/1047609/download",
-        iframe: "https://xeno-canto.org/1047609/embed?simple=1"
     }
 
     
