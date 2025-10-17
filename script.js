@@ -492,7 +492,7 @@ fetch("donnees_concours/departements-grand-est.geojson")
 // === AJOUT 2 : bouton "Choisir une espèce" et logique (placé dans DOMContentLoaded pour éviter soucis de portée) ===
 const chooseSpeciesBtn = document.createElement('button');
 chooseSpeciesBtn.id = 'choose-species';
-chooseSpeciesBtn.textContent = '🕊️ Choisir une espèce';
+chooseSpeciesBtn.textContent = 'Choisir une espèce';
 chooseSpeciesBtn.title = 'Choisir une espèce';
 chooseSpeciesBtn.style.position = 'absolute';
 chooseSpeciesBtn.style.top = '15px';
@@ -624,6 +624,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
