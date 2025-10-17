@@ -35,6 +35,14 @@ window.sonsEspeces = {
         son: "https://xeno-canto.org/1033969/download",
         iframe: "https://xeno-canto.org/1033969/embed?simple=1"
     },
+    "Cyanistes caeruleus": {
+        son: "https://xeno-canto.org/1029271/download",
+        iframe: "https://xeno-canto.org/1029271/embed?simple=1"
+    },
+    "Delichon urbicum": {
+        son: "https://xeno-canto.org/1022103/download",
+        iframe: "https://xeno-canto.org/1022103/embed?simple=1"
+    },
     // etc...
 
 
