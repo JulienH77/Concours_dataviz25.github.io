@@ -494,8 +494,8 @@ const chooseSpeciesBtn = document.createElement('button');
 chooseSpeciesBtn.id = 'choose-species';
 chooseSpeciesBtn.textContent = 'Choisir une espèce';
 chooseSpeciesBtn.title = 'Choisir une espèce';
-chooseSpeciesBtn.style.position = 'absolute';
-chooseSpeciesBtn.style.top = '15px';
+chooseSpeciesBtn.style.position = 'fixed';
+chooseSpeciesBtn.style.top = '20px';
 chooseSpeciesBtn.style.right = '65px';
 chooseSpeciesBtn.style.zIndex = '1000';
 chooseSpeciesBtn.style.background = 'white';
@@ -624,6 +624,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
