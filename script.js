@@ -507,29 +507,43 @@ chooseSpeciesBtn.style.transition = '0.2s';
 chooseSpeciesBtn.onmouseover = () => { chooseSpeciesBtn.style.background = '#5e8c61'; chooseSpeciesBtn.style.color = 'white'; };
 chooseSpeciesBtn.onmouseout = () => { chooseSpeciesBtn.style.background = 'white'; chooseSpeciesBtn.style.color = 'black'; };
 document.body.appendChild(chooseSpeciesBtn);
-
 chooseSpeciesBtn.addEventListener('click', () => {
     if (!window.oiseauxData.length) {
-        // si aucune donnée chargée pour le moment, propose de cliquer sur un département
         alert("Clique d'abord sur un département pour charger les données !");
         return;
     }
 
-    let html = `<h2 style="text-align:center;color:#5e8c61;">Choisissez l'espèce que vous voulez rencontrer</h2>`;
-    html += `<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-height:60vh;overflow:auto;padding:6px;">`;
+    // === Contenu de la popup de sélection ===
+    let html = `
+        <h2 style="text-align:center;color:#5e8c61;margin-bottom:6px;">Choisissez l'espèce que vous voulez rencontrer</h2>
+        <div style="text-align:center;font-size:14px;margin-bottom:8px;">
+            <strong>Légende :</strong>
+            <span style="display:inline-block;width:15px;height:15px;background:#d9534f;border-radius:3px;margin-left:6px;"></span> 2012–2016
+            <span style="display:inline-block;width:15px;height:15px;background:#f0ad4e;border-radius:3px;margin-left:6px;"></span> 2017–2019
+            <span style="display:inline-block;width:15px;height:15px;background:#5e8c61;border-radius:3px;margin-left:6px;"></span> 2020–2022
+        </div>
+        <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-height:65vh;overflow:auto;padding:6px;width:95%;margin:auto;">
+    `;
     const especes = [...new Set(window.oiseauxData.map(o => o.espece))];
 
     especes.forEach(e => {
         const obs = window.oiseauxData.find(o => o.espece === e);
         html += `
-        <div class="espece-choice" data-espece="${e}" style="display:flex;flex-direction:column;align-items:center;width:80px;cursor:pointer;">
-            <img src="photos/${e.replace(/ /g, '_')}.jpg" onerror="this.src='https://via.placeholder.com/70?text=${encodeURIComponent(e.charAt(0))}'"
-                style="width:60px;height:60px;border-radius:50%;border:2px solid #5e8c61;object-fit:cover;margin-bottom:6px;">
-            <span style="font-size:12px;text-align:center;">${obs?.nomVernaculaire || e}</span>
+        <div class="espece-choice" data-espece="${e}"
+             style="display:flex;flex-direction:column;align-items:center;width:90px;cursor:pointer;">
+            <img src="photos/${e.replace(/ /g, '_')}.jpg"
+                onerror="this.src='https://via.placeholder.com/70?text=${encodeURIComponent(e.charAt(0))}'"
+                style="width:70px;height:70px;border-radius:50%;border:2px solid #5e8c61;object-fit:cover;margin-bottom:6px;">
+            <span style="font-size:13px;text-align:center;">${obs?.nomVernaculaire || e}</span>
         </div>`;
     });
+
     html += `</div>`;
     popupContent.innerHTML = html;
+
+    // Rend la popup un peu plus large qu'avant
+    popupStats.style.maxWidth = "850px";
+
     afficherPopup();
 
     document.querySelectorAll('.espece-choice').forEach(div => {
@@ -537,13 +551,15 @@ chooseSpeciesBtn.addEventListener('click', () => {
             const especeChoisie = div.getAttribute('data-espece');
             const nomScientifique = window.oiseauxData.find(o => o.espece === especeChoisie)?.nomScientifique;
             fermerPopup();
-            // joue le son (si disponible)
+
             if (nomScientifique) playChant(nomScientifique);
-            // colore toutes les communes où l'espèce est présente (pour tous les départements chargés)
-            colorerCommunesPourEspece(especeChoisie);
+
+            // Coloration des communes selon dernière année d’observation
+            colorerCommunesPourEspeceParPeriode(especeChoisie);
         });
     });
 });
+
 
 function colorerCommunesPourEspece(espece) {
     if (!window.layerCommunes) return;
@@ -558,8 +574,56 @@ function colorerCommunesPourEspece(espece) {
         });
     });
 }
-// === FIN AJOUT 2 ===
+// === AJOUT : coloration selon la période de dernière observation ===
+function colorerCommunesPourEspeceParPeriode(espece) {
+    if (!window.layerCommunes) return;
+
+    // On récupère toutes les observations pour cette espèce
+    const obsEspece = window.oiseauxData.filter(o => o.espece === espece);
+
+    // On détermine la dernière année d'observation pour chaque commune
+    const dernieresAnnees = {};
+    obsEspece.forEach(o => {
+        const code = o.codeinseecommune;
+        if (!dernieresAnnees[code] || o.annee > dernieresAnnees[code]) {
+            dernieresAnnees[code] = o.annee;
+        }
+    });
+
+    // On applique les couleurs selon les périodes
+    window.layerCommunes.eachLayer(layer => {
+        const code = layer.feature.properties.code.padStart(5, '0');
+        const annee = dernieresAnnees[code];
+
+        let fillColor = 'white';
+        let borderColor = '#aaa';
+        let fillOpacity = 0.05;
+
+        if (annee) {
+            if (annee >= 2012 && annee <= 2016) {
+                fillColor = '#d9534f'; // rouge
+                borderColor = '#b52b27';
+                fillOpacity = 0.5;
+            } else if (annee >= 2017 && annee <= 2019) {
+                fillColor = '#f0ad4e'; // jaune
+                borderColor = '#c77c0a';
+                fillOpacity = 0.5;
+            } else if (annee >= 2020 && annee <= 2022) {
+                fillColor = '#5e8c61'; // vert
+                borderColor = '#3b5e3c';
+                fillOpacity = 0.5;
+            }
+        }
+
+        layer.setStyle({
+            fillColor,
+            fillOpacity,
+            color: borderColor
+        });
+    });
+}
 
 }); // fin DOMContentLoaded
+
 
 
