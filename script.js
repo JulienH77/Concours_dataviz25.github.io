@@ -524,8 +524,8 @@ document.body.appendChild(chooseSpeciesBtn);
 const chosenContainer = document.createElement('div');
 chosenContainer.id = 'chosen-species-container';
 chosenContainer.style.position = 'fixed';
-chosenContainer.style.top = '20px';
-chosenContainer.style.right = '150px'; // se place à gauche du bouton (ajuste si nécessaire)
+chosenContainer.style.top = '15px';
+chosenContainer.style.right = '210px';
 chosenContainer.style.zIndex = '1000';
 chosenContainer.style.display = 'flex';
 chosenContainer.style.alignItems = 'center';
@@ -546,7 +546,7 @@ function showChosenSpeciesBadge(espece) {
     badge.id = 'chosen-species-badge';
     badge.title = `Ouvrir la fiche de ${espece}`;
     badge.style.display = 'flex';
-    badge.style.flexDirection = 'column';
+    badge.style.flexDirection = 'row-reverse';
     badge.style.alignItems = 'center';
     badge.style.cursor = 'pointer';
 
@@ -566,6 +566,7 @@ function showChosenSpeciesBadge(espece) {
     label.style.maxWidth = '100px';
     label.style.textAlign = 'center';
     label.style.marginTop = '3px';
+    label.style.marginRight = '3px';
 
     badge.appendChild(img);
     badge.appendChild(label);
@@ -704,6 +705,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
