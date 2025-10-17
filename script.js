@@ -441,7 +441,7 @@ function afficherStatsEspece(espece, observationsCommune, nomCommune, nomScienti
             legend: { show: false },
             grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
             xAxis: { type: 'category', data: annees, axisLabel: { color: '#333' } },
-            yAxis: {type: 'value', name: "Nombre d'observations", nameTextStyle: { color: '#333', align: 'center', padding: [0, 28, 0, 0] }, nameGap: 28, axisLabel: { color: '#333', margin: 12 }},
+            /*yAxis: {type: 'value', name: "Nombre d'observations", nameTextStyle: { color: '#333', align: 'center', padding: [0, 28, 0, 0] }, nameGap: 28, axisLabel: { color: '#333', margin: 12 }},*/
             series,
             animationDuration: 700,
             animationEasing: 'cubicOut'
@@ -705,6 +705,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
