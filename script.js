@@ -78,39 +78,56 @@ function preloadAudio(url) {
     }
 }
 
-// --- LECTURE DU SON (sans alert) ---
-function playChant(nomScientifique) {
-    const sonData = sonsEspeces[nomScientifique];
-    if (!sonData?.son) {
-        console.warn(`Aucun son configuré pour ${nomScientifique}`);
-        return;
+// ---------- Gestion sonore : lecture simultanée par commune ----------
+
+window.activeAudios = []; // stocke tous les objets Audio en cours
+window.soundAuto = true; // ou ce que tu utilises déjà
+
+function stopAllSounds() {
+    if (window.activeAudios.length > 0) {
+        for (const a of window.activeAudios) {
+            try {
+                a.pause();
+                a.currentTime = 0;
+            } catch (e) {}
+        }
+        window.activeAudios = [];
+    }
+    highlightEspeces([]); // désactive les badges
+}
+
+function playChantsForSpeciesList(nomsScientifiques = []) {
+    stopAllSounds(); // stoppe les sons précédents
+
+    if (!window.soundAuto || !nomsScientifiques || nomsScientifiques.length === 0) {
+        return; // rien à jouer
     }
 
-    // Si un son est déjà en lecture, on l'arrête seulement s'il est différent
-    if (window.currentAudio) {
-        if (window.currentAudio.src !== sonData.son) {
-            window.currentAudio.pause();
-            window.currentAudio.currentTime = 0;
-        } else {
-            // le même son est déjà en train de jouer → on ne fait rien
-            return;
+    const newAudios = [];
+
+    for (const nomSci of nomsScientifiques) {
+        const sonData = sonsEspeces[nomSci];
+        if (!sonData?.son) continue;
+
+        try {
+            const audio = new Audio(sonData.son);
+            audio.preload = 'auto';
+            audio.volume = 1.0;
+            newAudios.push(audio);
+
+            // Démarrage avec gestion des erreurs Chrome
+            audio.play().catch(err => {
+                console.warn(`Erreur lecture ${nomSci}:`, err);
+            });
+        } catch (e) {
+            console.error("Erreur création Audio:", e);
         }
     }
 
-    try {
-        const audio = new Audio(sonData.son);
-        window.currentAudio = audio;
-
-        // ✅ Chrome-friendly : attendre que play() soit résolu
-        audio.play().then(() => {
-            console.log("Lecture démarrée :", sonData.son);
-        }).catch(e => {
-            console.warn("Lecture audio bloquée :", e);
-        });
-    } catch (e) {
-        console.error("Erreur playChant:", e);
-    }
+    window.activeAudios = newAudios;
+    highlightEspeces(nomsScientifiques);
 }
+
 
 
 // --- effet "on parle" sur badges ---
@@ -243,16 +260,11 @@ async function chargerCommunesParDep(codeDep) {
                     const especesAvecSon = [...new Set(oiseauxCommune.map(o => o.nomScientifique))]
                         .filter(nomScientifique => sonsEspeces[nomScientifique]);
 
-                    if (window.soundAuto && especesAvecSon.length > 0) {
-                        // on joue seulement le PREMIER pour éviter cacophonie, puis on highlight toutes les espèces présentes
-                        playChant(especesAvecSon[0]);
-                        highlightEspeces(especesAvecSon);
-                        // précharge les autres éventuellement
-                        especesAvecSon.forEach(n => sonsEspeces[n]?.son && preloadAudio(sonsEspeces[n].son));
-                    } else {
-                        // retire highlight si son auto désactivé
-                        highlightEspeces([]);
-                    }
+                        if (window.soundAuto && especesAvecSon.length > 0) {
+                            playChantsForSpeciesList(especesAvecSon);
+                        } else {
+                            stopAllSounds();
+                        }
 
                     // affiche la liste des espèces pour la commune (sans ouvrir la popup overlay)
                     afficherOiseaux(codeCommune, feature.properties.nom, oiseauxCommune);
@@ -714,6 +726,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
