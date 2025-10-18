@@ -78,10 +78,32 @@ function preloadAudio(url) {
     }
 }
 
-// ---------- Gestion sonore : lecture simultanée par commune ----------
 
-window.activeAudios = []; // stocke tous les objets Audio en cours
-window.soundAuto = true; // ou ce que tu utilises déjà
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ---------- Gestion sonore stable Chrome/Firefox ----------
+
+window.activeAudios = [];
+window.soundAuto = true;
 
 function stopAllSounds() {
     if (window.activeAudios.length > 0) {
@@ -93,15 +115,24 @@ function stopAllSounds() {
         }
         window.activeAudios = [];
     }
-    highlightEspeces([]); // désactive les badges
+    highlightEspeces([]);
 }
 
-function playChantsForSpeciesList(nomsScientifiques = []) {
-    stopAllSounds(); // stoppe les sons précédents
+// utilitaire pour attendre un court instant (Chrome a besoin d’un tick d’event loop)
+function wait(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function playChantsForSpeciesList(nomsScientifiques = []) {
+    // stoppe tout avant de rejouer
+    stopAllSounds();
 
     if (!window.soundAuto || !nomsScientifiques || nomsScientifiques.length === 0) {
-        return; // rien à jouer
+        return;
     }
+
+    // ⏸ attend un tick avant de lancer les nouveaux sons
+    await wait(50);
 
     const newAudios = [];
 
@@ -115,9 +146,11 @@ function playChantsForSpeciesList(nomsScientifiques = []) {
             audio.volume = 1.0;
             newAudios.push(audio);
 
-            // Démarrage avec gestion des erreurs Chrome
+            // lance le son et capture seulement les vraies erreurs
             audio.play().catch(err => {
-                console.warn(`Erreur lecture ${nomSci}:`, err);
+                if (err.name !== 'AbortError') {
+                    console.warn(`Erreur lecture ${nomSci}:`, err);
+                }
             });
         } catch (e) {
             console.error("Erreur création Audio:", e);
@@ -127,6 +160,30 @@ function playChantsForSpeciesList(nomsScientifiques = []) {
     window.activeAudios = newAudios;
     highlightEspeces(nomsScientifiques);
 }
+
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
 
 
 
@@ -726,6 +783,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
