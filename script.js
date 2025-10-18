@@ -100,39 +100,24 @@ function preloadAudio(url) {
 
 
 
-// ---------- Gestion sonore stable Chrome/Firefox ----------
-
 window.activeAudios = [];
 window.soundAuto = true;
 
 function stopAllSounds() {
-    if (window.activeAudios.length > 0) {
-        for (const a of window.activeAudios) {
-            try {
-                a.pause();
-                a.currentTime = 0;
-            } catch (e) {}
-        }
-        window.activeAudios = [];
+    for (const a of window.activeAudios) {
+        try {
+            a.pause();
+            a.currentTime = 0;
+        } catch (e) {}
     }
+    window.activeAudios = [];
     highlightEspeces([]);
 }
 
-// utilitaire pour attendre un court instant (Chrome a besoin d’un tick d’event loop)
-function wait(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+function playChantsForSpeciesList(nomsScientifiques = []) {
+    stopAllSounds(); // toujours couper les anciens
 
-async function playChantsForSpeciesList(nomsScientifiques = []) {
-    // stoppe tout avant de rejouer
-    stopAllSounds();
-
-    if (!window.soundAuto || !nomsScientifiques || nomsScientifiques.length === 0) {
-        return;
-    }
-
-    // ⏸ attend un tick avant de lancer les nouveaux sons
-    await wait(50);
+    if (!window.soundAuto || nomsScientifiques.length === 0) return;
 
     const newAudios = [];
 
@@ -141,19 +126,21 @@ async function playChantsForSpeciesList(nomsScientifiques = []) {
         if (!sonData?.son) continue;
 
         try {
+            // ⚠️ créer un nouvel objet Audio à chaque clic
             const audio = new Audio(sonData.son);
-            audio.preload = 'auto';
-            audio.volume = 1.0;
-            newAudios.push(audio);
+            audio.volume = 0.7;
+            audio.preload = 'none';
 
-            // lance le son et capture seulement les vraies erreurs
-            audio.play().catch(err => {
-                if (err.name !== 'AbortError') {
-                    console.warn(`Erreur lecture ${nomSci}:`, err);
-                }
+            // on joue immédiatement — dans le même "thread" d’interaction utilisateur
+            audio.play().then(() => {
+                console.log(`Lecture de ${nomSci}`);
+            }).catch(err => {
+                console.warn(`Erreur lecture ${nomSci}:`, err);
             });
+
+            newAudios.push(audio);
         } catch (e) {
-            console.error("Erreur création Audio:", e);
+            console.error(`Erreur avec ${nomSci}:`, e);
         }
     }
 
@@ -317,11 +304,16 @@ async function chargerCommunesParDep(codeDep) {
                     const especesAvecSon = [...new Set(oiseauxCommune.map(o => o.nomScientifique))]
                         .filter(nomScientifique => sonsEspeces[nomScientifique]);
 
-                        if (window.soundAuto && especesAvecSon.length > 0) {
-                            playChantsForSpeciesList(especesAvecSon);
-                        } else {
-                            stopAllSounds();
-                        }
+map.on('click', async function(e) {
+    const especesAvecSon = getSpeciesForCommune(e.latlng);
+
+    if (window.soundAuto && especesAvecSon.length > 0) {
+        playChantsForSpeciesList(especesAvecSon);
+    } else {
+        stopAllSounds();
+    }
+});
+
 
                     // affiche la liste des espèces pour la commune (sans ouvrir la popup overlay)
                     afficherOiseaux(codeCommune, feature.properties.nom, oiseauxCommune);
@@ -783,6 +775,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
