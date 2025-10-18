@@ -85,20 +85,33 @@ function playChant(nomScientifique) {
         console.warn(`Aucun son configuré pour ${nomScientifique}`);
         return;
     }
+
+    // Si un son est déjà en lecture, on l'arrête seulement s'il est différent
     if (window.currentAudio) {
-        window.currentAudio.pause();
-        window.currentAudio.currentTime = 0;
+        if (window.currentAudio.src !== sonData.son) {
+            window.currentAudio.pause();
+            window.currentAudio.currentTime = 0;
+        } else {
+            // le même son est déjà en train de jouer → on ne fait rien
+            return;
+        }
     }
+
     try {
-        window.currentAudio = new Audio(sonData.son);
-        window.currentAudio.play().catch(e => {
-            // suppression de l'alerte ; log uniquement
-            console.warn("Erreur de lecture audio (probablement bloquée par navigateur):", e);
+        const audio = new Audio(sonData.son);
+        window.currentAudio = audio;
+
+        // ✅ Chrome-friendly : attendre que play() soit résolu
+        audio.play().then(() => {
+            console.log("Lecture démarrée :", sonData.son);
+        }).catch(e => {
+            console.warn("Lecture audio bloquée :", e);
         });
     } catch (e) {
         console.error("Erreur playChant:", e);
     }
 }
+
 
 // --- effet "on parle" sur badges ---
 function highlightEspeces(especeList) {
@@ -701,6 +714,7 @@ function colorerCommunesPourEspeceParPeriode(espece) {
 }
 
 }); // fin DOMContentLoaded
+
 
 
 
